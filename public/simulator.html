@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMS Simulator</title>
+<style>
+:root{--ground:#EEF4F2;--surface:#fff;--line:#D3E2DE;--ink:#10231F;--ink-2:#4A5E59;--ink-3:#7A8D88;--accent:#0F6B5C;--bubble:#E7EFED;--warn:#FFF3CD;--warn-ink:#5C4700}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif;padding:0 20px}
+.wrap{max-width:980px;margin:0 auto;padding-block:20px 40px}
+h1{font-size:24px;margin:0 0 4px}
+.lede{color:var(--ink-2);margin:0 0 16px;max-width:70ch}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:16px}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--ink-2)}
+input,select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;color:var(--ink)}
+.btn{font:inherit;border:0;background:var(--accent);color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:20px;align-items:start}
+.phone{background:var(--surface);border:1px solid var(--line);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;height:560px}
+.phone header{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}
+.phone header small{display:block;font-weight:400;color:var(--ink-3);font-size:12px}
+.thread{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;background:#F6FAF9}
+.msg{max-width:85%;padding:8px 12px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px}
+.in{align-self:flex-start;background:var(--bubble);border-bottom-left-radius:5px}
+.out{align-self:flex-end;background:#1f7aec;color:#fff;border-bottom-right-radius:5px}
+.phone form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.phone form input{flex:1;min-width:0;border-radius:999px}
+.desk{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.desk h2{font-size:16px;margin:0 0 8px}
+.desk ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.desk li{font-size:14px;border-bottom:1px dashed var(--line);padding-bottom:8px}
+.desk time{display:block;font:12px Consolas,monospace;color:var(--ink-3)}
+.note{background:var(--warn);color:var(--warn-ink);border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:16px}
+.status{font-size:13px;color:var(--ink-3);min-height:20px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SMS simulator</h1>
+  <p class="lede">Test missed-call texting without Twilio. You play the patient on the phone; the right side shows the alerts the front desk would get.</p>
+  <div class="note">Test mode: nothing here sends a real text message.</div>
+  <div class="controls">
+    <label>Clinic <select id="clinic"><option value="brisa">brisa</option></select></label>
+    <label>Patient phone <input id="phone" value="+18325550177" inputmode="tel"></label>
+    <button class="btn" id="missed">Simulate a missed call</button>
+    <a href="/dashboard" target="_blank" rel="noopener">Open dashboard ↗</a>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <div class="grid">
+    <div class="phone">
+      <header>Patient's phone<small id="phone-label"></small></header>
+      <div class="thread" id="thread"></div>
+      <form id="form"><input id="text" placeholder="Text the clinic…" autocomplete="off" aria-label="Message"><button class="btn" id="send">Send</button></form>
+    </div>
+    <div class="desk">
+      <h2>Front desk alerts (SMS)</h2>
+      <ul id="alerts"><li>No alerts yet.</li></ul>
+    </div>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let busy = false;
+
+function params() { return { clinic: $("clinic").value, phone: $("phone").value.trim() }; }
+
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || "Request failed.");
+  return data;
+}
+
+async function load() {
+  const { clinic, phone } = params();
+  $("phone-label").textContent = phone;
+  const r = await fetch(`/dev/sms?clinic=${encodeURIComponent(clinic)}&phone=${encodeURIComponent(phone)}`);
+  if (!r.ok) return;
+  const data = await r.json();
+  const t = $("thread"); const atBottom = t.scrollHeight - t.scrollTop - t.clientHeight < 40;
+  t.textContent = "";
+  data.patient.forEach(m => { const d = document.createElement("div"); d.className = "msg " + (m.direction === "in" ? "out" : "in"); d.textContent = m.body; t.append(d); });
+  if (atBottom) t.scrollTop = t.scrollHeight;
+  const a = $("alerts"); a.textContent = "";
+  if (!data.frontDesk.length) a.innerHTML = "<li>No alerts yet.</li>";
+  data.frontDesk.slice().reverse().forEach(m => { const li = document.createElement("li"); li.textContent = m.body; const tm = document.createElement("time"); tm.textContent = new Date(m.created_at + "").toLocaleTimeString(); li.prepend(tm); a.append(li); });
+}
+
+async function run(label, fn) {
+  if (busy) return;
+  busy = true; $("send").disabled = true; $("missed").disabled = true;
+  $("status").textContent = label;
+  try { await fn(); $("status").textContent = ""; }
+  catch (e) { $("status").textContent = e.message; }
+  finally { busy = false; $("send").disabled = false; $("missed").disabled = false; load(); }
+}
+
+$("missed").addEventListener("click", () => run("Texting the caller…", () => post("/dev/missed-call", params())));
+$("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("text").value.trim();
+  if (!text) return;
+  $("text").value = "";
+  run("Assistant is writing…", async () => {
+    const p = post("/dev/sms", { ...params(), text });
+    setTimeout(load, 300);
+    await p;
+  });
+});
+$("phone").addEventListener("change", load);
+setInterval(load, 3000);
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "id": "brisa",
+  "name": "Brisa Family Dental",
+  "timezone": "America/Chicago",
+  "phone": "(713) 555-0100",
+  "address": "2215 Airline Dr, Houston, TX 77009",
+  "color": "#0F6B5C",
+  "hours": {
+    "mon": "8:00am-6:00pm",
+    "tue": "8:00am-6:00pm",
+    "wed": "8:00am-6:00pm",
+    "thu": "8:00am-6:00pm",
+    "fri": "8:00am-6:00pm",
+    "sat": "9:00am-2:00pm",
+    "sun": null
+  },
+  "insurance": [
+    "Delta Dental PPO",
+    "Cigna PPO",
+    "MetLife PPO",
+    "Aetna PPO",
+    "Guardian PPO",
+    "United Concordia PPO",
+    "Texas Medicaid and CHIP for patients under 21"
+  ],
+  "services": [
+    "cleanings and exams", "fillings", "crowns", "root canals", "extractions", "dental implants",
+    "Invisalign", "veneers", "whitening", "kids' dentistry", "emergency visits"
+  ],
+  "offers": [
+    "New-patient special for patients without insurance: $79 exam, x-rays and cleaning.",
+    "Brisa Membership Plan: $299 per year, includes 2 cleanings and 20% off treatment.",
+    "Free consultation for implants and Invisalign.",
+    "Financing available through CareCredit."
+  ],
+  "extraNotes": "Free parking in front. Spanish-speaking staff at the front desk.",
+  "greeting": {
+    "web": "Hi! I'm the virtual assistant for Brisa Family Dental. ¿Prefiere español? I can answer questions, check your insurance and request your visit.",
+    "sms": "Hi, this is Brisa Family Dental - sorry we missed your call! How can we help? / ¡Hola! Perdón por no contestar, ¿en qué le ayudamos? Reply STOP to opt out."
+  },
+  "twilioNumber": "+17135550100",
+  "frontDeskPhone": "+17135550199",
+  "allowedOrigins": []
+}

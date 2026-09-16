@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Front Desk Leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#EEF4F2; --surface:#FFFFFF; --surface-2:#F6FAF9; --line:#D3E2DE;
+  --ink:#10231F; --ink-2:#4A5E59; --ink-3:#7A8D88;
+  --accent:#0F6B5C; --accent-ink:#FFFFFF; --accent-soft:#D6EEE8;
+  --urgent:#B4232F; --urgent-soft:#F8E1E3; --value:#8A5A00; --value-soft:#F6EACB;
+  --routine:#3D5A80; --routine-soft:#E2E9F3;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ground:#0B1513; --surface:#12201D; --surface-2:#172825; --line:#243a35;
+    --ink:#E3EEEB; --ink-2:#A8BCB7; --ink-3:#768B86;
+    --accent:#5BC5B0; --accent-ink:#06201A; --accent-soft:#173D36;
+    --urgent:#F08A93; --urgent-soft:#3A1C20; --value:#E6BC62; --value-soft:#352B14;
+    --routine:#9DB8DD; --routine-soft:#1C2838;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.5 var(--body);padding:0 20px}
+.wrap{max-width:1100px;margin:0 auto;padding-block:20px 48px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+h1,h2{font-family:var(--display);letter-spacing:-.01em;margin:0}
+
+.login{max-width:380px;margin:12vh auto 0;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;display:flex;flex-direction:column;gap:14px}
+.login h1{font-size:26px}
+.login p{margin:0;color:var(--ink-2)}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--ink-2)}
+input,select{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:15px}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+.error{color:var(--urgent);font-size:14px;margin:0}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.top h1{font-size:24px}
+.top small{display:block;color:var(--ink-3);font-size:13px;font-family:var(--body)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;margin-block:20px 16px}
+.stat{padding:12px 16px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat dt{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600}
+.stat dd{margin:2px 0 0;font:700 26px var(--display);font-variant-numeric:tabular-nums}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+.leads{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.lead{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px}
+.lead.urgent{border-left:4px solid var(--urgent)}
+.name{font-weight:600;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.meta{font:12px var(--mono);color:var(--ink-2)}
+.facts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13.5px;color:var(--ink-2)}
+.facts b{color:var(--ink);font-weight:600}
+.summary{grid-column:1/-1;font-size:14px;border-top:1px dashed var(--line);padding-top:8px}
+.actions{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end}
+.actions select{padding:6px 8px;font-size:13px}
+.actions .btn{padding:6px 12px;font-size:13px}
+.chip{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+.chip.urgent{background:var(--urgent-soft);color:var(--urgent)}
+.chip.value{background:var(--value-soft);color:var(--value)}
+.chip.routine{background:var(--routine-soft);color:var(--routine)}
+.chip.lang{background:var(--accent-soft);color:var(--accent)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--ink-2)}
+
+dialog{border:1px solid var(--line);border-radius:18px;padding:0;background:var(--surface);color:var(--ink);width:min(520px,calc(100vw - 32px));max-height:80vh}
+dialog::backdrop{background:rgba(6,20,17,.45)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.dlg-head h2{font-size:18px}
+.thread{padding:14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:calc(80vh - 64px);background:var(--surface-2)}
+.msg{max-width:85%;padding:8px 12px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.msg.user{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.msg.assistant{align-self:flex-end;background:var(--accent-soft)}
+.msg time{display:block;font:11px var(--mono);color:var(--ink-3);margin-top:2px}
+@media (max-width:760px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat:nth-child(2){border-right:0}
+  .stat:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .lead{grid-template-columns:1fr}
+  .actions{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form class="login" id="login" hidden>
+    <h1>Front desk sign in</h1>
+    <p>See new patient leads from your website chat and missed-call texts.</p>
+    <label>Clinic ID <input id="login-clinic" autocomplete="username" required value="brisa"></label>
+    <label>Password <input id="login-password" type="password" autocomplete="current-password" required></label>
+    <p class="error" id="login-error" hidden></p>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+
+  <section id="app" hidden>
+    <div class="top">
+      <h1 id="clinic-name">Leads<small>Updates every 15 seconds</small></h1>
+      <button class="btn ghost" id="logout">Sign out</button>
+    </div>
+    <dl class="stats" id="stats"></dl>
+    <div class="filters" role="group" aria-label="Filter leads">
+      <button data-filter="open" aria-pressed="true">Needs action</button>
+      <button data-filter="urgent" aria-pressed="false">Urgent</button>
+      <button data-filter="requested" aria-pressed="false">Appointment requests</button>
+      <button data-filter="all" aria-pressed="false">All</button>
+    </div>
+    <ul class="leads" id="leads"></ul>
+  </section>
+</div>
+
+<dialog id="convo">
+  <div class="dlg-head"><h2 id="convo-title">Conversation</h2><button class="btn ghost" id="convo-close">Close</button></div>
+  <div class="thread" id="convo-thread"></div>
+</dialog>
+
+<script>
+const TREATMENT = {implant:"Dental implant",invisalign:"Invisalign",veneers:"Veneers",crown:"Crown",root_canal:"Root canal",extraction:"Extraction",emergency:"Emergency",whitening:"Whitening",filling:"Filling",cleaning:"Cleaning & exam",kids:"Kids' visit",other:"General visit"};
+const HIGH_VALUE = new Set(["implant","invisalign","veneers","crown","root_canal"]);
+const STATUS = {requested:"Appointment requested",callback:"Wants a call",followup:"Still deciding"};
+const DESK = {new:"New",contacted:"Contacted",confirmed:"Appointment confirmed",closed:"Closed"};
+
+let leads = [], filter = "open", timer = null;
+const $ = (id) => document.getElementById(id);
+
+async function api(path, opts = {}) {
+  const r = await fetch(`/api/desk${path}`, { headers: { "Content-Type": "application/json" }, ...opts });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401) { showLogin(); throw new Error("signed out"); }
+  if (!r.ok) throw new Error(data.error || "Request failed.");
+  return data;
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function when(iso) {
+  const d = new Date(iso);
+  const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : d.toLocaleDateString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function showLogin() {
+  clearInterval(timer);
+  $("app").hidden = true; $("login").hidden = false;
+}
+
+async function showApp(clinic) {
+  $("login").hidden = true; $("app").hidden = false;
+  $("clinic-name").firstChild.textContent = clinic.name;
+  await refresh();
+  clearInterval(timer);
+  timer = setInterval(() => refresh().catch(() => {}), 15000);
+}
+
+async function refresh() {
+  leads = (await api("/leads")).leads;
+  render();
+}
+
+function render() {
+  const today = new Date().toDateString();
+  const stats = [
+    ["New today", leads.filter(l => new Date(l.created_at).toDateString() === today).length],
+    ["Needs action", leads.filter(l => l.desk_status === "new").length],
+    ["Urgent", leads.filter(l => l.urgency === "emergency" && l.desk_status !== "closed").length],
+    ["Confirmed", leads.filter(l => l.desk_status === "confirmed").length],
+  ];
+  const s = $("stats"); s.textContent = "";
+  stats.forEach(([k, v]) => { const d = el("div", "stat"); d.append(el("dt", null, k), el("dd", null, v)); s.append(d); });
+
+  const shown = leads.filter(l =>
+    filter === "all" ? true :
+    filter === "urgent" ? l.urgency === "emergency" && l.desk_status !== "closed" :
+    filter === "requested" ? l.status === "requested" && l.desk_status !== "confirmed" && l.desk_status !== "closed" :
+    l.desk_status === "new" || l.desk_status === "contacted");
+
+  const ul = $("leads"); ul.textContent = "";
+  if (!shown.length) { ul.append(el("li", "empty", leads.length ? "Nothing here. Try another filter." : "No leads yet. They appear here as soon as the assistant learns a patient's name and what they need.")); return; }
+
+  shown.forEach(l => {
+    const li = el("li", "lead" + (l.urgency === "emergency" ? " urgent" : ""));
+    const left = el("div");
+    const name = el("div", "name", l.name);
+    const pr = l.urgency === "emergency" ? ["urgent","Urgent"] : l.urgency === "soon" ? ["urgent","Soon"] : HIGH_VALUE.has(l.treatment) ? ["value","High value"] : ["routine","Routine"];
+    name.append(el("span", "chip " + pr[0], pr[1]), el("span", "chip lang", l.language.toUpperCase()));
+    const meta = el("div", "meta", `${l.phone || "no phone yet"} · ${l.channel === "sms" ? "Missed call → text" : "Website chat"} · ${when(l.updated_at)}`);
+    left.append(name, meta);
+
+    const actions = el("div", "actions");
+    const sel = el("select"); sel.setAttribute("aria-label", `Status for ${l.name}`);
+    Object.entries(DESK).forEach(([v, t]) => { const o = el("option", null, t); o.value = v; o.selected = v === l.desk_status; sel.append(o); });
+    sel.addEventListener("change", async () => {
+      try { await api(`/leads/${l.id}`, { method: "PATCH", body: JSON.stringify({ desk_status: sel.value }) }); l.desk_status = sel.value; render(); }
+      catch (e) { alert(e.message); }
+    });
+    const view = el("button", "btn ghost", "View chat");
+    view.addEventListener("click", () => openConversation(l));
+    actions.append(sel, view);
+
+    const facts = el("div", "facts");
+    const fact = (k, v) => { const sp = el("span"); sp.append(el("b", null, k + ": "), document.createTextNode(v)); return sp; };
+    facts.append(fact("Needs", TREATMENT[l.treatment] || "General visit"), fact("Insurance", l.insurance || "None / unknown"), fact("Status", STATUS[l.status] || l.status));
+    if (l.preferred_time) facts.append(fact("Prefers", l.preferred_time));
+
+    li.append(left, actions, facts);
+    if (l.summary) li.append(el("div", "summary", l.summary));
+    ul.append(li);
+  });
+}
+
+async function openConversation(lead) {
+  const data = await api(`/conversations/${lead.conversation_id}`);
+  $("convo-title").textContent = `${lead.name} · ${data.channel === "sms" ? data.contact : "Website chat"}`;
+  const t = $("convo-thread"); t.textContent = "";
+  data.messages.forEach(m => { const b = el("div", "msg " + m.role, m.content); b.append(el("time", null, (m.role === "user" ? "Patient · " : "Assistant · ") + when(m.created_at))); t.append(b); });
+  $("convo").showModal();
+  t.scrollTop = t.scrollHeight;
+}
+
+$("convo-close").addEventListener("click", () => $("convo").close());
+document.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+}));
+
+$("login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("login-error").hidden = true;
+  try {
+    const r = await fetch("/api/desk/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clinic: $("login-clinic").value.trim(), password: $("login-password").value }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || "Sign in failed.");
+    $("login-password").value = "";
+    showApp(data.clinic);
+  } catch (err) { $("login-error").textContent = err.message; $("login-error").hidden = false; }
+});
+
+$("logout").addEventListener("click", async () => { await fetch("/api/desk/logout", { method: "POST" }); showLogin(); });
+
+fetch("/api/desk/me").then(r => r.ok ? r.json() : null).then(d => d ? showApp(d.clinic) : showLogin()).catch(showLogin);
+</script>
+</body>
+</html>
