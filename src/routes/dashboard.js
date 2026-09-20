@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { env, getBusiness, businessPassword } from "../config.js";
+import { jobTypeLabels, pick } from "../verticals.js";
 import * as db from "../db.js";
 
 const router = express.Router();
@@ -41,19 +42,24 @@ router.post("/logout", (req, res) => {
   res.json({ ok: true });
 });
 
-/** Everything the dashboard needs to label this industry's leads. */
+/**
+ * Everything the dashboard needs to label this industry's leads, already
+ * resolved into the staff language chosen in the business file.
+ */
 function describe(business) {
   const pack = business.pack;
+  const lang = business.language;
   return {
     id: business.id,
     name: business.name,
     timezone: business.timezone,
     vertical: business.vertical,
-    jobTypes: pack.jobTypes,
+    language: lang,
+    jobTypes: jobTypeLabels(pack, lang),
     highValue: pack.highValue,
-    contact: pack.contact,
-    qualifierLabel: pack.qualifier?.label ?? "",
-    qualifierEmpty: pack.qualifier?.empty ?? "",
+    contact: { one: pick(pack.contact.one, lang), plural: pick(pack.contact.plural, lang) },
+    qualifierLabel: pack.qualifier ? pick(pack.qualifier.label, lang) : "",
+    qualifierEmpty: pack.qualifier ? pick(pack.qualifier.empty, lang) : "",
   };
 }
 
@@ -68,7 +74,8 @@ router.get("/leads", requireBusiness, (req, res) => {
 router.get("/conversations/:id", requireBusiness, (req, res) => {
   const conversation = db.getConversation(Number(req.params.id));
   if (!conversation || conversation.business_id !== req.business.id) return res.status(404).json({ error: "Conversation not found." });
-  const contact = conversation.channel === "sms" ? conversation.contact : "Website visitor";
+  const webVisitor = req.business.language === "es" ? "Visitante de la web" : "Website visitor";
+  const contact = conversation.channel === "sms" ? conversation.contact : webVisitor;
   res.json({ channel: conversation.channel, contact, messages: db.getMessages(conversation.id, 200) });
 });
 

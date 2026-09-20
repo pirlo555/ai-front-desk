@@ -2,6 +2,7 @@
   "id": "brisa",
   "name": "Brisa Family Dental",
   "vertical": "dental",
+  "language": "en",
   "timezone": "America/Chicago",
   "phone": "(713) 555-0100",
   "address": "2215 Airline Dr, Houston, TX 77009",
@@ -25,8 +26,17 @@
     "Texas Medicaid and CHIP for patients under 21"
   ],
   "services": [
-    "cleanings and exams", "fillings", "crowns", "root canals", "extractions", "dental implants",
-    "Invisalign", "veneers", "whitening", "kids' dentistry", "emergency visits"
+    "cleanings and exams",
+    "fillings",
+    "crowns",
+    "root canals",
+    "extractions",
+    "dental implants",
+    "Invisalign",
+    "veneers",
+    "whitening",
+    "kids' dentistry",
+    "emergency visits"
   ],
   "offers": [
     "New-patient special for patients without insurance: $79 exam, x-rays and cleaning.",

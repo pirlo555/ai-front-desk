@@ -2,6 +2,7 @@ import { env } from "./config.js";
 import * as db from "./db.js";
 import { runAgent, fallbackResult } from "./agent.js";
 import { sendSms } from "./messaging.js";
+import { pick } from "./verticals.js";
 
 const MAX_USER_MESSAGES = 40;
 const OPT_OUT = /^\s*(stop|stopall|unsubscribe|cancel|end|quit|parar|detener|baja)\s*$/i;
@@ -16,26 +17,48 @@ function withLock(key, fn) {
   return next;
 }
 
+// Alerts are read by the business's own staff, so they follow the language set
+// in its file -- not the language the member of the public happened to write in.
+const ALERTS = {
+  en: {
+    open: "Open",
+    newLead: (urgent, who, job) => `new ${urgent ? "URGENT " : ""}${who} lead (${job}).`,
+    appointment: (job) => `appointment request to confirm (${job}).`,
+    needsPerson: "a conversation needs a person.",
+    fallbackJob: "New request",
+  },
+  es: {
+    open: "Abre",
+    newLead: (urgent, who, job) => `nuevo contacto${urgent ? " URGENTE" : ""} de ${who} (${job}).`,
+    appointment: (job) => `petición de cita por confirmar (${job}).`,
+    needsPerson: "una conversación necesita a una persona.",
+    fallbackJob: "Petición nueva",
+  },
+};
+
 async function notifyFrontDesk(business, text) {
   if (!business.frontDeskPhone) return;
+  const t = ALERTS[business.language] || ALERTS.en;
   // Keep personal details out of the SMS; staff read them in the dashboard.
-  await sendSms(business, business.frontDeskPhone, `${business.name}: ${text} Open ${env.publicBaseUrl}/dashboard`);
+  await sendSms(business, business.frontDeskPhone, `${business.name}: ${text} ${t.open} ${env.publicBaseUrl}/dashboard`);
 }
 
 async function afterTurn(business, conversation, result) {
+  const lang = business.language;
+  const t = ALERTS[lang] || ALERTS.en;
   if (result.lead) {
     const { lead, isNew, statusChanged } = db.upsertLead(conversation.id, business.id, result.lead);
-    const label = business.pack.jobTypes[lead.job_type] || "New request";
-    const who = business.pack.contact.one;
+    const job = pick(business.pack.jobTypes[lead.job_type], lang) || t.fallbackJob;
+    const who = pick(business.pack.contact.one, lang);
     if (isNew) {
-      await notifyFrontDesk(business, `new ${lead.urgency === "emergency" ? "URGENT " : ""}${who} lead (${label}).`);
+      await notifyFrontDesk(business, t.newLead(lead.urgency === "emergency", who, job));
     } else if (statusChanged && lead.status === "requested") {
-      await notifyFrontDesk(business, `appointment request to confirm (${label}).`);
+      await notifyFrontDesk(business, t.appointment(job));
     }
   }
   if (result.escalate && !conversation.escalation_notified) {
     db.markEscalationNotified(conversation.id);
-    await notifyFrontDesk(business, "a conversation needs a person.");
+    await notifyFrontDesk(business, t.needsPerson);
   }
 }
 

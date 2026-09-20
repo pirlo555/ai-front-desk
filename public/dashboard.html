@@ -95,38 +95,83 @@ dialog::backdrop{background:rgba(6,20,17,.45)}
 <body>
 <div class="wrap">
   <form class="login" id="login" hidden>
-    <h1>Front desk sign in</h1>
-    <p>See new leads from your website chat and missed-call texts.</p>
-    <label>Business ID <input id="login-business" autocomplete="username" required value="brisa"></label>
-    <label>Password <input id="login-password" type="password" autocomplete="current-password" required></label>
+    <h1 data-t="signInTitle">Front desk sign in</h1>
+    <p data-t="signInSub">See new leads from your website chat and missed-call texts.</p>
+    <label><span data-t="businessId">Business ID</span> <input id="login-business" autocomplete="username" required value="brisa"></label>
+    <label><span data-t="password">Password</span> <input id="login-password" type="password" autocomplete="current-password" required></label>
     <p class="error" id="login-error" hidden></p>
-    <button class="btn" type="submit">Sign in</button>
+    <button class="btn" type="submit" data-t="signIn">Sign in</button>
   </form>
 
   <section id="app" hidden>
     <div class="top">
-      <h1 id="business-name">Leads<small>Updates every 15 seconds</small></h1>
-      <button class="btn ghost" id="logout">Sign out</button>
+      <h1 id="business-name">Leads<small data-t="updates">Updates every 15 seconds</small></h1>
+      <button class="btn ghost" id="logout" data-t="signOut">Sign out</button>
     </div>
     <dl class="stats" id="stats"></dl>
-    <div class="filters" role="group" aria-label="Filter leads">
-      <button data-filter="open" aria-pressed="true">Needs action</button>
-      <button data-filter="urgent" aria-pressed="false">Urgent</button>
-      <button data-filter="requested" aria-pressed="false">Appointment requests</button>
-      <button data-filter="all" aria-pressed="false">All</button>
+    <div class="filters" role="group" id="filters">
+      <button data-filter="open" aria-pressed="true" data-t="fNeedsAction">Needs action</button>
+      <button data-filter="urgent" aria-pressed="false" data-t="fUrgent">Urgent</button>
+      <button data-filter="requested" aria-pressed="false" data-t="fRequests">Appointment requests</button>
+      <button data-filter="all" aria-pressed="false" data-t="fAll">All</button>
     </div>
     <ul class="leads" id="leads"></ul>
   </section>
 </div>
 
 <dialog id="convo">
-  <div class="dlg-head"><h2 id="convo-title">Conversation</h2><button class="btn ghost" id="convo-close">Close</button></div>
+  <div class="dlg-head"><h2 id="convo-title">Conversation</h2><button class="btn ghost" id="convo-close" data-t="close">Close</button></div>
   <div class="thread" id="convo-thread"></div>
 </dialog>
 
 <script>
-const STATUS = {requested:"Appointment requested",callback:"Wants a call",followup:"Still deciding"};
-const DESK = {new:"New",contacted:"Contacted",confirmed:"Appointment confirmed",closed:"Closed"};
+// Every word the staff reads, in both languages. Which one is used comes from
+// the business file, so a Hialeah plumber sees Spanish and a Brickell clinic
+// sees English from the same install. The public is answered in their own
+// language regardless of this setting.
+const I18N = {
+  en: {
+    signInTitle:"Front desk sign in", signInSub:"See new leads from your website chat and missed-call texts.",
+    businessId:"Business ID", password:"Password", signIn:"Sign in", signOut:"Sign out",
+    signInFailed:"Sign in failed.", requestFailed:"Request failed.", updates:"Updates every 15 seconds",
+    fNeedsAction:"Needs action", fUrgent:"Urgent", fRequests:"Appointment requests", fAll:"All",
+    close:"Close", filterLeads:"Filter leads",
+    statNewToday:"New today", statNeedsAction:"Needs action", statUrgent:"Urgent", statConfirmed:"Confirmed",
+    emptyFiltered:"Nothing here. Try another filter.",
+    emptyNone:(who)=>`No leads yet. They appear here as soon as the assistant learns a ${who}'s name and what they need.`,
+    chipUrgent:"Urgent", chipSoon:"Soon", chipValue:"High value", chipRoutine:"Routine",
+    noPhone:"no phone yet", viaSms:"Missed call → text", viaWeb:"Website chat",
+    needs:"Needs", statusLabel:"Status", prefers:"Prefers", otherJob:"Other",
+    viewChat:"View chat", assistant:"Assistant", statusFor:(n)=>`Status for ${n}`,
+    status:{requested:"Appointment requested",callback:"Wants a call",followup:"Still deciding"},
+    desk:{new:"New",contacted:"Contacted",confirmed:"Appointment confirmed",closed:"Closed"},
+  },
+  es: {
+    signInTitle:"Acceso de recepción", signInSub:"Vea los contactos nuevos del chat de su web y de las llamadas perdidas.",
+    businessId:"Identificador del negocio", password:"Contraseña", signIn:"Entrar", signOut:"Salir",
+    signInFailed:"No se pudo entrar.", requestFailed:"No se pudo completar.", updates:"Se actualiza cada 15 segundos",
+    fNeedsAction:"Necesita atención", fUrgent:"Urgente", fRequests:"Citas pedidas", fAll:"Todos",
+    close:"Cerrar", filterLeads:"Filtrar contactos",
+    statNewToday:"Nuevos hoy", statNeedsAction:"Por atender", statUrgent:"Urgentes", statConfirmed:"Confirmados",
+    emptyFiltered:"Aquí no hay nada. Pruebe otro filtro.",
+    emptyNone:(who)=>`Todavía no hay contactos. Aparecen aquí en cuanto el asistente sabe el nombre de un ${who} y lo que necesita.`,
+    chipUrgent:"Urgente", chipSoon:"Pronto", chipValue:"Alto valor", chipRoutine:"Normal",
+    noPhone:"sin teléfono aún", viaSms:"Llamada perdida → mensaje", viaWeb:"Chat de la web",
+    needs:"Necesita", statusLabel:"Estado", prefers:"Prefiere", otherJob:"Otro",
+    viewChat:"Ver conversación", assistant:"Asistente", statusFor:(n)=>`Estado de ${n}`,
+    status:{requested:"Cita pedida",callback:"Quiere que le llamen",followup:"Todavía decidiendo"},
+    desk:{new:"Nuevo",contacted:"Contactado",confirmed:"Cita confirmada",closed:"Cerrado"},
+  },
+};
+
+// Before sign-in we don't know the business yet, so follow the browser.
+let T = I18N[(navigator.language || "en").slice(0,2) === "es" ? "es" : "en"];
+
+function applyStaticText() {
+  document.querySelectorAll("[data-t]").forEach(el => { const v = T[el.dataset.t]; if (typeof v === "string") el.textContent = v; });
+  const f = $("filters"); if (f) f.setAttribute("aria-label", T.filterLeads);
+  document.documentElement.lang = T === I18N.es ? "es" : "en";
+}
 
 // Labels depend on the industry, so they come from the server after sign-in.
 let biz = {jobTypes:{}, highValue:[], contact:{one:"customer",plural:"customers"}, qualifierLabel:"", qualifierEmpty:""};
@@ -139,7 +184,7 @@ async function api(path, opts = {}) {
   const r = await fetch(`/api/desk${path}`, { headers: { "Content-Type": "application/json" }, ...opts });
   const data = await r.json().catch(() => ({}));
   if (r.status === 401) { showLogin(); throw new Error("signed out"); }
-  if (!r.ok) throw new Error(data.error || "Request failed.");
+  if (!r.ok) throw new Error(data.error || T.requestFailed);
   return data;
 }
 
@@ -164,6 +209,8 @@ function showLogin() {
 async function showApp(business) {
   $("login").hidden = true; $("app").hidden = false;
   biz = business;
+  T = I18N[business.language] || I18N.en;
+  applyStaticText();
   highValue = new Set(business.highValue || []);
   $("business-name").firstChild.textContent = business.name;
   await refresh();
@@ -179,10 +226,10 @@ async function refresh() {
 function render() {
   const today = new Date().toDateString();
   const stats = [
-    ["New today", leads.filter(l => new Date(l.created_at).toDateString() === today).length],
-    ["Needs action", leads.filter(l => l.desk_status === "new").length],
-    ["Urgent", leads.filter(l => l.urgency === "emergency" && l.desk_status !== "closed").length],
-    ["Confirmed", leads.filter(l => l.desk_status === "confirmed").length],
+    [T.statNewToday, leads.filter(l => new Date(l.created_at).toDateString() === today).length],
+    [T.statNeedsAction, leads.filter(l => l.desk_status === "new").length],
+    [T.statUrgent, leads.filter(l => l.urgency === "emergency" && l.desk_status !== "closed").length],
+    [T.statConfirmed, leads.filter(l => l.desk_status === "confirmed").length],
   ];
   const s = $("stats"); s.textContent = "";
   stats.forEach(([k, v]) => { const d = el("div", "stat"); d.append(el("dt", null, k), el("dd", null, v)); s.append(d); });
@@ -194,34 +241,34 @@ function render() {
     l.desk_status === "new" || l.desk_status === "contacted");
 
   const ul = $("leads"); ul.textContent = "";
-  if (!shown.length) { ul.append(el("li", "empty", leads.length ? "Nothing here. Try another filter." : `No leads yet. They appear here as soon as the assistant learns a ${biz.contact.one}'s name and what they need.`)); return; }
+  if (!shown.length) { ul.append(el("li", "empty", leads.length ? T.emptyFiltered : T.emptyNone(biz.contact.one))); return; }
 
   shown.forEach(l => {
     const li = el("li", "lead" + (l.urgency === "emergency" ? " urgent" : ""));
     const left = el("div");
     const name = el("div", "name", l.name);
-    const pr = l.urgency === "emergency" ? ["urgent","Urgent"] : l.urgency === "soon" ? ["urgent","Soon"] : highValue.has(l.job_type) ? ["value","High value"] : ["routine","Routine"];
+    const pr = l.urgency === "emergency" ? ["urgent",T.chipUrgent] : l.urgency === "soon" ? ["urgent",T.chipSoon] : highValue.has(l.job_type) ? ["value",T.chipValue] : ["routine",T.chipRoutine];
     name.append(el("span", "chip " + pr[0], pr[1]), el("span", "chip lang", l.language.toUpperCase()));
-    const meta = el("div", "meta", `${l.phone || "no phone yet"} · ${l.channel === "sms" ? "Missed call → text" : "Website chat"} · ${when(l.updated_at)}`);
+    const meta = el("div", "meta", `${l.phone || T.noPhone} · ${l.channel === "sms" ? T.viaSms : T.viaWeb} · ${when(l.updated_at)}`);
     left.append(name, meta);
 
     const actions = el("div", "actions");
-    const sel = el("select"); sel.setAttribute("aria-label", `Status for ${l.name}`);
-    Object.entries(DESK).forEach(([v, t]) => { const o = el("option", null, t); o.value = v; o.selected = v === l.desk_status; sel.append(o); });
+    const sel = el("select"); sel.setAttribute("aria-label", T.statusFor(l.name));
+    Object.entries(T.desk).forEach(([v, t]) => { const o = el("option", null, t); o.value = v; o.selected = v === l.desk_status; sel.append(o); });
     sel.addEventListener("change", async () => {
       try { await api(`/leads/${l.id}`, { method: "PATCH", body: JSON.stringify({ desk_status: sel.value }) }); l.desk_status = sel.value; render(); }
       catch (e) { alert(e.message); }
     });
-    const view = el("button", "btn ghost", "View chat");
+    const view = el("button", "btn ghost", T.viewChat);
     view.addEventListener("click", () => openConversation(l));
     actions.append(sel, view);
 
     const facts = el("div", "facts");
     const fact = (k, v) => { const sp = el("span"); sp.append(el("b", null, k + ": "), document.createTextNode(v)); return sp; };
-    facts.append(fact("Needs", biz.jobTypes[l.job_type] || "Other"));
+    facts.append(fact(T.needs, biz.jobTypes[l.job_type] || T.otherJob));
     if (biz.qualifierLabel) facts.append(fact(biz.qualifierLabel, l.qualifier || biz.qualifierEmpty));
-    facts.append(fact("Status", STATUS[l.status] || l.status));
-    if (l.preferred_time) facts.append(fact("Prefers", l.preferred_time));
+    facts.append(fact(T.statusLabel, T.status[l.status] || l.status));
+    if (l.preferred_time) facts.append(fact(T.prefers, l.preferred_time));
 
     li.append(left, actions, facts);
     if (l.summary) li.append(el("div", "summary", l.summary));
@@ -234,7 +281,7 @@ async function openConversation(lead) {
   $("convo-title").textContent = `${lead.name} · ${data.channel === "sms" ? data.contact : "Website chat"}`;
   const t = $("convo-thread"); t.textContent = "";
   const who = biz.contact.one.charAt(0).toUpperCase() + biz.contact.one.slice(1);
-  data.messages.forEach(m => { const b = el("div", "msg " + m.role, m.content); b.append(el("time", null, (m.role === "user" ? who + " · " : "Assistant · ") + when(m.created_at))); t.append(b); });
+  data.messages.forEach(m => { const b = el("div", "msg " + m.role, m.content); b.append(el("time", null, (m.role === "user" ? who + " · " : T.assistant + " · ") + when(m.created_at))); t.append(b); });
   $("convo").showModal();
   t.scrollTop = t.scrollHeight;
 }
@@ -252,7 +299,7 @@ $("login").addEventListener("submit", async (e) => {
   try {
     const r = await fetch("/api/desk/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business: $("login-business").value.trim(), password: $("login-password").value }) });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || "Sign in failed.");
+    if (!r.ok) throw new Error(data.error || T.signInFailed);
     $("login-password").value = "";
     showApp(data.business);
   } catch (err) { $("login-error").textContent = err.message; $("login-error").hidden = false; }
@@ -260,6 +307,7 @@ $("login").addEventListener("submit", async (e) => {
 
 $("logout").addEventListener("click", async () => { await fetch("/api/desk/logout", { method: "POST" }); showLogin(); });
 
+applyStaticText();
 fetch("/api/desk/me").then(r => r.ok ? r.json() : null).then(d => d ? showApp(d.business) : showLogin()).catch(showLogin);
 </script>
 </body>

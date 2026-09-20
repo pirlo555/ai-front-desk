@@ -6,8 +6,22 @@
  * safety rules apply -- so the same assistant works for a dental clinic, a
  * plumber or an immigration attorney without changing any code.
  *
+ * Every label a human reads exists in English and Spanish. The business picks
+ * with "language" in its file: that sets the dashboard and the SMS alerts its
+ * staff receive. It does NOT affect the public, who are always answered in
+ * whatever language they wrote in.
+ *
  * To support a new industry, add a pack here and use its id in the business file.
  */
+
+export const LANGUAGES = ["en", "es"];
+
+/** Picks one side of an {en, es} pair, falling back to English. */
+export function pick(pair, lang) {
+  if (pair == null) return "";
+  if (typeof pair === "string") return pair;
+  return pair[lang] ?? pair.en ?? "";
+}
 
 /** Rules every industry gets, whatever the pack says. */
 const COMMON_RULES = `- Never ask for Social Security numbers, dates of birth, member or policy IDs, or card numbers. If someone shares them, don't repeat them back.
@@ -17,20 +31,34 @@ const COMMON_RULES = `- Never ask for Social Security numbers, dates of birth, m
 
 const packs = {
   dental: {
-    label: "Dental clinic",
+    label: { en: "Dental clinic", es: "Clínica dental" },
     describes: "a dental clinic",
-    contact: { one: "patient", plural: "patients" },
+    contact: {
+      one: { en: "patient", es: "paciente" },
+      plural: { en: "patients", es: "pacientes" },
+      promptOne: "patient",
+      promptPlural: "patients",
+    },
     jobTypes: {
-      implant: "Dental implant", invisalign: "Invisalign", veneers: "Veneers", crown: "Crown",
-      root_canal: "Root canal", extraction: "Extraction", emergency: "Emergency", whitening: "Whitening",
-      filling: "Filling", cleaning: "Cleaning & exam", kids: "Kids visit", other: "General visit",
+      implant: { en: "Dental implant", es: "Implante dental" },
+      invisalign: { en: "Invisalign", es: "Invisalign" },
+      veneers: { en: "Veneers", es: "Carillas" },
+      crown: { en: "Crown", es: "Corona" },
+      root_canal: { en: "Root canal", es: "Endodoncia" },
+      extraction: { en: "Extraction", es: "Extracción" },
+      emergency: { en: "Emergency", es: "Urgencia" },
+      whitening: { en: "Whitening", es: "Blanqueamiento" },
+      filling: { en: "Filling", es: "Empaste" },
+      cleaning: { en: "Cleaning & exam", es: "Limpieza y revisión" },
+      kids: { en: "Kids visit", es: "Visita de niños" },
+      other: { en: "General visit", es: "Visita general" },
     },
     highValue: ["implant", "invisalign", "veneers", "crown", "root_canal"],
     qualifier: {
-      label: "Insurance",
+      label: { en: "Insurance", es: "Seguro" },
       optionsLabel: "Insurance accepted",
       collect: "their insurance carrier (or that they are paying out of pocket)",
-      empty: "None / unknown",
+      empty: { en: "None / unknown", es: "Ninguno / sin saber" },
     },
     rules: `- Never diagnose or give medical advice. You may say the dentist will evaluate it.
 - If the patient mentions swelling spreading to the face, eye or neck, trouble breathing or swallowing, high fever, uncontrolled bleeding, or trauma to the face: tell them to call 911 or go to the nearest emergency room now, and set escalate to true.
@@ -39,20 +67,31 @@ const packs = {
   },
 
   medical: {
-    label: "Medical practice or med spa",
+    label: { en: "Medical practice or med spa", es: "Consulta médica o med spa" },
     describes: "a medical practice",
-    contact: { one: "patient", plural: "patients" },
+    contact: {
+      one: { en: "patient", es: "paciente" },
+      plural: { en: "patients", es: "pacientes" },
+      promptOne: "patient",
+      promptPlural: "patients",
+    },
     jobTypes: {
-      consultation: "Consultation", checkup: "Check-up", followup: "Follow-up", procedure: "Procedure",
-      aesthetic: "Aesthetic treatment", urgent: "Urgent visit", labs: "Labs / testing",
-      vaccination: "Vaccination", other: "General visit",
+      consultation: { en: "Consultation", es: "Consulta" },
+      checkup: { en: "Check-up", es: "Revisión" },
+      followup: { en: "Follow-up", es: "Seguimiento" },
+      procedure: { en: "Procedure", es: "Procedimiento" },
+      aesthetic: { en: "Aesthetic treatment", es: "Tratamiento estético" },
+      urgent: { en: "Urgent visit", es: "Visita urgente" },
+      labs: { en: "Labs / testing", es: "Análisis / pruebas" },
+      vaccination: { en: "Vaccination", es: "Vacunación" },
+      other: { en: "General visit", es: "Visita general" },
     },
     highValue: ["procedure", "aesthetic"],
     qualifier: {
-      label: "Insurance",
+      label: { en: "Insurance", es: "Seguro" },
       optionsLabel: "Insurance accepted",
       collect: "their insurance carrier (or that they are paying out of pocket)",
-      empty: "None / unknown",
+      empty: { en: "None / unknown", es: "Ninguno / sin saber" },
     },
     rules: `- Never diagnose, never give medical advice, and never comment on medication. You may say the provider will evaluate it.
 - If the person describes chest pain, trouble breathing, stroke signs (face drooping, arm weakness, slurred speech), heavy bleeding, a severe allergic reaction, or thoughts of harming themselves: tell them to call 911 or go to the nearest emergency room now, and set escalate to true.
@@ -61,20 +100,33 @@ const packs = {
   },
 
   home_services: {
-    label: "Home services (plumbing, HVAC, electrical, roofing, locksmith)",
+    label: {
+      en: "Home services (plumbing, HVAC, electrical, roofing, locksmith)",
+      es: "Servicios a domicilio (fontanería, aire, electricidad, techos, cerrajería)",
+    },
     describes: "a home services company",
-    contact: { one: "customer", plural: "customers" },
+    contact: {
+      one: { en: "customer", es: "cliente" },
+      plural: { en: "customers", es: "clientes" },
+      promptOne: "customer",
+      promptPlural: "customers",
+    },
     jobTypes: {
-      emergency_repair: "Emergency repair", repair: "Repair", installation: "New installation",
-      replacement: "Replacement", maintenance: "Maintenance / tune-up", inspection: "Inspection",
-      estimate: "Estimate", other: "Other job",
+      emergency_repair: { en: "Emergency repair", es: "Reparación urgente" },
+      repair: { en: "Repair", es: "Reparación" },
+      installation: { en: "New installation", es: "Instalación nueva" },
+      replacement: { en: "Replacement", es: "Sustitución" },
+      maintenance: { en: "Maintenance / tune-up", es: "Mantenimiento" },
+      inspection: { en: "Inspection", es: "Inspección" },
+      estimate: { en: "Estimate", es: "Presupuesto" },
+      other: { en: "Other job", es: "Otro trabajo" },
     },
     highValue: ["installation", "replacement"],
     qualifier: {
-      label: "Address",
+      label: { en: "Address", es: "Dirección" },
       optionsLabel: "Service area",
       collect: "the service address (street and city), so the team knows it is inside the service area",
-      empty: "Not given yet",
+      empty: { en: "Not given yet", es: "Todavía sin dar" },
     },
     rules: `- Never walk anyone through a repair and never give safety instructions beyond the emergency lines below. A technician has to see it.
 - If the customer mentions a gas smell, sparks or smoke, an electrical burning smell, or water pouring near an electrical panel: tell them to leave the building and call 911 (and the gas company for a gas smell) right now, and set escalate to true.
@@ -83,20 +135,33 @@ const packs = {
   },
 
   auto: {
-    label: "Auto repair shop",
+    label: { en: "Auto repair shop", es: "Taller mecánico" },
     describes: "an auto repair shop",
-    contact: { one: "customer", plural: "customers" },
+    contact: {
+      one: { en: "customer", es: "cliente" },
+      plural: { en: "customers", es: "clientes" },
+      promptOne: "customer",
+      promptPlural: "customers",
+    },
     jobTypes: {
-      diagnostic: "Diagnostic", repair: "Repair", maintenance: "Oil change / maintenance", brakes: "Brakes",
-      tires: "Tires & alignment", engine: "Engine", transmission: "Transmission", ac: "A/C",
-      bodywork: "Body work", estimate: "Estimate", other: "Other job",
+      diagnostic: { en: "Diagnostic", es: "Diagnóstico" },
+      repair: { en: "Repair", es: "Reparación" },
+      maintenance: { en: "Oil change / maintenance", es: "Cambio de aceite / mantenimiento" },
+      brakes: { en: "Brakes", es: "Frenos" },
+      tires: { en: "Tires & alignment", es: "Neumáticos y alineación" },
+      engine: { en: "Engine", es: "Motor" },
+      transmission: { en: "Transmission", es: "Transmisión" },
+      ac: { en: "A/C", es: "Aire acondicionado" },
+      bodywork: { en: "Body work", es: "Chapa y pintura" },
+      estimate: { en: "Estimate", es: "Presupuesto" },
+      other: { en: "Other job", es: "Otro trabajo" },
     },
     highValue: ["engine", "transmission", "bodywork"],
     qualifier: {
-      label: "Vehicle",
+      label: { en: "Vehicle", es: "Vehículo" },
       optionsLabel: "Makes serviced",
       collect: "the vehicle year, make and model",
-      empty: "Not given yet",
+      empty: { en: "Not given yet", es: "Todavía sin dar" },
     },
     rules: `- Never diagnose the problem and never estimate a repair price. Collect the symptoms and let the shop quote after inspection.
 - If the customer describes failing brakes, a steering problem, smoke from the engine, or a strong fuel smell: tell them not to drive the vehicle and to have it towed, and set escalate to true.
@@ -104,20 +169,31 @@ const packs = {
   },
 
   legal: {
-    label: "Law firm",
+    label: { en: "Law firm", es: "Despacho de abogados" },
     describes: "a law firm",
-    contact: { one: "client", plural: "clients" },
+    contact: {
+      one: { en: "client", es: "cliente" },
+      plural: { en: "clients", es: "clientes" },
+      promptOne: "client",
+      promptPlural: "clients",
+    },
     jobTypes: {
-      immigration: "Immigration", personal_injury: "Personal injury", family: "Family law",
-      criminal: "Criminal defense", business: "Business", real_estate: "Real estate",
-      employment: "Employment", consultation: "General consultation", other: "Other matter",
+      immigration: { en: "Immigration", es: "Inmigración" },
+      personal_injury: { en: "Personal injury", es: "Lesiones personales" },
+      family: { en: "Family law", es: "Derecho de familia" },
+      criminal: { en: "Criminal defense", es: "Defensa penal" },
+      business: { en: "Business", es: "Empresarial" },
+      real_estate: { en: "Real estate", es: "Inmobiliario" },
+      employment: { en: "Employment", es: "Laboral" },
+      consultation: { en: "General consultation", es: "Consulta general" },
+      other: { en: "Other matter", es: "Otro asunto" },
     },
     highValue: ["personal_injury", "immigration"],
     qualifier: {
-      label: "Location",
+      label: { en: "Location", es: "Ubicación" },
       optionsLabel: "States and areas served",
       collect: "the city and state where the matter is (the firm can only handle some areas)",
-      empty: "Not given yet",
+      empty: { en: "Not given yet", es: "Todavía sin dar" },
     },
     rules: `- You are not a lawyer and you never give legal advice. Never say whether someone has a case, what it is worth, how long it takes, or what they should do. An attorney decides all of that in the consultation.
 - Never discuss immigration status details, criminal history, or case facts beyond what is needed to route the matter. Collect the type of matter and when it happened, nothing more.
@@ -127,12 +203,21 @@ const packs = {
   },
 
   general: {
-    label: "Any other local business",
+    label: { en: "Any other local business", es: "Cualquier otro negocio local" },
     describes: "a local business",
-    contact: { one: "customer", plural: "customers" },
+    contact: {
+      one: { en: "customer", es: "cliente" },
+      plural: { en: "customers", es: "clientes" },
+      promptOne: "customer",
+      promptPlural: "customers",
+    },
     jobTypes: {
-      quote: "Quote request", service: "Service", repair: "Repair", appointment: "Appointment",
-      question: "Question", other: "Other",
+      quote: { en: "Quote request", es: "Petición de presupuesto" },
+      service: { en: "Service", es: "Servicio" },
+      repair: { en: "Repair", es: "Reparación" },
+      appointment: { en: "Appointment", es: "Cita" },
+      question: { en: "Question", es: "Pregunta" },
+      other: { en: "Other", es: "Otro" },
     },
     highValue: [],
     qualifier: null,
@@ -156,4 +241,11 @@ export function verticalRules(vertical, businessName) {
 /** Job type keys the model is allowed to return for this vertical. */
 export function jobTypeKeys(vertical) {
   return Object.keys(vertical.jobTypes);
+}
+
+/** Flat {key: label} map of job types in one language, for humans to read. */
+export function jobTypeLabels(vertical, lang) {
+  const out = {};
+  for (const [key, pair] of Object.entries(vertical.jobTypes)) out[key] = pick(pair, lang);
+  return out;
 }

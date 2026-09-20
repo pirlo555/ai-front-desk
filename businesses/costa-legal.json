@@ -2,6 +2,7 @@
   "id": "costa-legal",
   "name": "Costa & Rivera Law",
   "vertical": "legal",
+  "language": "es",
   "timezone": "America/New_York",
   "phone": "(305) 555-0180",
   "address": "78 SW 8th St, Suite 410, Miami, FL 33130",
@@ -21,9 +22,15 @@
     "Consultations by phone or video"
   ],
   "services": [
-    "family-based immigration petitions", "green cards and citizenship", "work permits", "asylum",
-    "deportation defense", "car accidents and personal injury", "slip and fall",
-    "divorce and child custody", "wills and estates"
+    "family-based immigration petitions",
+    "green cards and citizenship",
+    "work permits",
+    "asylum",
+    "deportation defense",
+    "car accidents and personal injury",
+    "slip and fall",
+    "divorce and child custody",
+    "wills and estates"
   ],
   "offers": [
     "Free 20-minute consultation for immigration and personal injury.",

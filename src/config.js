@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { getVertical, VERTICAL_IDS } from "./verticals.js";
+import { getVertical, VERTICAL_IDS, LANGUAGES } from "./verticals.js";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -56,6 +56,13 @@ function loadBusinesses() {
     }
     for (const d of DAYS) if (!(d in business.hours)) throw new Error(`${where}: hours.${d} is missing (use null when closed).`);
     if (!business.greeting.web || !business.greeting.sms) throw new Error(`${where}: greeting needs both "web" and "sms".`);
+
+    // Staff language: the dashboard and the SMS alerts to the front desk.
+    // The public is always answered in whatever language they wrote in.
+    business.language ??= "en";
+    if (!LANGUAGES.includes(business.language)) {
+      throw new Error(`${where}: language must be one of ${LANGUAGES.join(", ")} (got "${business.language}").`);
+    }
 
     business.pack = getVertical(business.vertical);
     // "insurance" is the older name for this list, kept so existing dental files still load.

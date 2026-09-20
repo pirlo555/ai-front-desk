@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { jobTypeKeys, verticalRules } from "./verticals.js";
+import { jobTypeKeys, verticalRules, pick } from "./verticals.js";
 
 const MODEL = "claude-opus-5";
 
@@ -11,7 +11,8 @@ const schemaCache = new Map();
 
 function outputSchema(business) {
   const pack = business.pack;
-  const cached = schemaCache.get(business.vertical);
+  const cacheKey = business.vertical + ':' + business.language;
+  const cached = schemaCache.get(cacheKey);
   if (cached) return cached;
 
   const schema = {
@@ -19,7 +20,7 @@ function outputSchema(business) {
     additionalProperties: false,
     required: ["reply", "escalate", "lead"],
     properties: {
-      reply: { type: "string", description: `The message sent to the ${pack.contact.one}.` },
+      reply: { type: "string", description: `The message sent to the ${pack.contact.promptOne}.` },
       escalate: {
         type: "boolean",
         description:
@@ -30,14 +31,16 @@ function outputSchema(business) {
         additionalProperties: false,
         required: ["captured", "name", "phone", "language", "job_type", "qualifier", "urgency", "status", "preferred_time", "summary"],
         properties: {
-          captured: { type: "boolean", description: `True once you know the ${pack.contact.one}'s name AND what they need.` },
+          captured: { type: "boolean", description: `True once you know the ${pack.contact.promptOne}'s name AND what they need.` },
           name: { type: "string" },
           phone: { type: "string", description: "Only if they gave it. Empty otherwise." },
           language: { type: "string", enum: ["en", "es"] },
           job_type: { type: "string", enum: jobTypeKeys(pack) },
           qualifier: {
             type: "string",
-            description: pack.qualifier ? `${pack.qualifier.label}: ${pack.qualifier.collect}. Empty if unknown.` : "Leave empty.",
+            description: pack.qualifier
+              ? `${pick(pack.qualifier.label, "en")}: ${pack.qualifier.collect}. Empty if unknown.`
+              : "Leave empty.",
           },
           urgency: { type: "string", enum: URGENCY },
           status: {
@@ -46,12 +49,15 @@ function outputSchema(business) {
             description: "requested = they chose a preferred day/time; callback = urgent or wants a call; followup = still deciding.",
           },
           preferred_time: { type: "string", description: "Their preferred day/time in plain words, or empty." },
-          summary: { type: "string", description: "One short line in English for the front desk." },
+          summary: {
+            type: "string",
+            description: `One short line for the front desk, written in ${business.language === "es" ? "Spanish" : "English"}.`,
+          },
         },
       },
     },
   };
-  schemaCache.set(business.vertical, schema);
+  schemaCache.set(cacheKey, schema);
   return schema;
 }
 
@@ -71,7 +77,7 @@ function businessPrompt(business) {
     pack.qualifier && business.qualifierOptions.length ? `${pack.qualifier.optionsLabel}: ${business.qualifierOptions.join("; ")}\n` : "";
   const collect = pack.qualifier ? `, ${pack.qualifier.collect}` : "";
 
-  return `You are the virtual front-desk assistant for ${business.name}, ${pack.describes}. You talk with ${pack.contact.plural} by website chat or SMS, in English or Spanish.
+  return `You are the virtual front-desk assistant for ${business.name}, ${pack.describes}. You talk with ${pack.contact.promptPlural} by website chat or SMS, in English or Spanish.
 
 <business_facts>
 Phone: ${business.phone}
@@ -111,7 +117,7 @@ function dayContext(business, channel, greeting) {
     const label = formatInZone(d, business.timezone, { weekday: "short", month: "short", day: "numeric" });
     days.push(`${label}${i === 0 ? " (today)" : ""}: ${business.hours[key] ?? "closed"}`);
   }
-  const known = channel === "sms" ? `SMS (the ${business.pack.contact.one}'s phone number is already known)` : "website chat";
+  const known = channel === "sms" ? `SMS (the ${business.pack.contact.promptOne}'s phone number is already known)` : "website chat";
   return `Channel: ${known}.
 The conversation opened with this message from the business: "${greeting}"
 Next 7 days (business time zone ${business.timezone}):

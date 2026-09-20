@@ -2,6 +2,7 @@
   "id": "rapido-air",
   "name": "Rapido Air & Plumbing",
   "vertical": "home_services",
+  "language": "es",
   "timezone": "America/New_York",
   "phone": "(305) 555-0140",
   "address": "1480 NW 27th Ave, Miami, FL 33125",
@@ -24,9 +25,16 @@
     "Broward County south of Hollywood"
   ],
   "services": [
-    "air conditioning repair", "A/C installation and replacement", "duct cleaning", "maintenance plans",
-    "water heater repair and replacement", "leak detection", "clogged drains", "toilet and faucet repair",
-    "repiping", "emergency service"
+    "air conditioning repair",
+    "A/C installation and replacement",
+    "duct cleaning",
+    "maintenance plans",
+    "water heater repair and replacement",
+    "leak detection",
+    "clogged drains",
+    "toilet and faucet repair",
+    "repiping",
+    "emergency service"
   ],
   "offers": [
     "$59 diagnostic visit, waived if you approve the repair the same day.",
