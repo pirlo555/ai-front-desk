@@ -5,9 +5,21 @@ import { handleIncomingMessage } from "../conversation.js";
 
 const router = express.Router();
 
-function allowedOrigin(business, origin) {
+/**
+ * The origin check exists to stop other websites embedding a business's chat.
+ * A request coming from a page this same server served is never that, so it is
+ * always allowed: without this the widget breaks behind a tunnel or any
+ * hostname other than PUBLIC_BASE_URL, which is exactly the demo setup.
+ */
+function allowedOrigin(business, req) {
+  const origin = req.get("Origin");
   if (!origin) return true; // same-origin requests don't send one
   if (origin === env.publicBaseUrl) return true;
+  try {
+    if (new URL(origin).host === req.get("Host")) return true;
+  } catch {
+    return false; // unparseable Origin header
+  }
   if (!env.isProd && /^http:\/\/localhost(:\d+)?$/.test(origin)) return true;
   return business.allowedOrigins.includes(origin);
 }
@@ -28,7 +40,7 @@ router.use(cors);
 
 router.get("/businesses/:businessId/public", (req, res) => {
   const business = getBusiness(req.params.businessId);
-  if (!business || !allowedOrigin(business, req.get("Origin"))) return res.status(404).json({ error: "Business not found." });
+  if (!business || !allowedOrigin(business, req)) return res.status(404).json({ error: "Business not found." });
   res.json({
     id: business.id,
     name: business.name,
@@ -43,7 +55,7 @@ const chatLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: "d
 router.post("/chat", chatLimiter, express.json({ limit: "10kb" }), async (req, res) => {
   const body = req.body || {};
   const business = getBusiness(body.business ?? body.clinic);
-  if (!business || !allowedOrigin(business, req.get("Origin"))) return res.status(404).json({ error: "Business not found." });
+  if (!business || !allowedOrigin(business, req)) return res.status(404).json({ error: "Business not found." });
   if (typeof body.session !== "string" || !/^[A-Za-z0-9-]{16,64}$/.test(body.session)) {
     return res.status(400).json({ error: "Invalid chat session. Reload the page and try again." });
   }
