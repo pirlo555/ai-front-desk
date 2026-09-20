@@ -1,0 +1,42 @@
+{
+  "id": "costa-legal",
+  "name": "Costa & Rivera Law",
+  "vertical": "legal",
+  "timezone": "America/New_York",
+  "phone": "(305) 555-0180",
+  "address": "78 SW 8th St, Suite 410, Miami, FL 33130",
+  "color": "#6B3F8F",
+  "hours": {
+    "mon": "9:00am-6:00pm",
+    "tue": "9:00am-6:00pm",
+    "wed": "9:00am-6:00pm",
+    "thu": "9:00am-6:00pm",
+    "fri": "9:00am-5:00pm",
+    "sat": null,
+    "sun": null
+  },
+  "qualifierOptions": [
+    "Florida (all counties)",
+    "Immigration matters nationwide",
+    "Consultations by phone or video"
+  ],
+  "services": [
+    "family-based immigration petitions", "green cards and citizenship", "work permits", "asylum",
+    "deportation defense", "car accidents and personal injury", "slip and fall",
+    "divorce and child custody", "wills and estates"
+  ],
+  "offers": [
+    "Free 20-minute consultation for immigration and personal injury.",
+    "No fee unless we win on personal injury cases.",
+    "Payment plans available on immigration matters.",
+    "Evening appointments by request."
+  ],
+  "extraNotes": "Fully bilingual office. Street parking and a paid garage next door.",
+  "greeting": {
+    "web": "Hi, I'm the virtual assistant for Costa & Rivera Law. ¿Prefiere español? I can answer general questions and set up your consultation with an attorney.",
+    "sms": "Hi, this is Costa & Rivera Law - sorry we missed your call! How can we help? / ¡Hola! Perdón por no contestar, ¿en qué le ayudamos? Reply STOP to opt out."
+  },
+  "twilioNumber": "+13055550180",
+  "frontDeskPhone": "+13055550189",
+  "allowedOrigins": []
+}

@@ -1,6 +1,6 @@
 {
-  "name": "dental-leads-agent",
-  "version": "1.0.0",
+  "name": "ai-front-desk",
+  "version": "2.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Bilingual AI front-desk assistant for dental clinics",
+  "description": "Bilingual AI front-desk assistant for local businesses",
   "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.126.0",

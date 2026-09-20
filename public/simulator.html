@@ -39,20 +39,20 @@ input,select{font:inherit;border:1px solid var(--line);border-radius:10px;paddin
 <body>
 <div class="wrap">
   <h1>SMS simulator</h1>
-  <p class="lede">Test missed-call texting without Twilio. You play the patient on the phone; the right side shows the alerts the front desk would get.</p>
+  <p class="lede">Test missed-call texting without Twilio. You play the caller on the phone; the right side shows the alerts the front desk would get.</p>
   <div class="note">Test mode: nothing here sends a real text message.</div>
   <div class="controls">
-    <label>Clinic <select id="clinic"><option value="brisa">brisa</option></select></label>
-    <label>Patient phone <input id="phone" value="+18325550177" inputmode="tel"></label>
+    <label>Business <select id="business"></select></label>
+    <label>Caller phone <input id="phone" value="+18325550177" inputmode="tel"></label>
     <button class="btn" id="missed">Simulate a missed call</button>
     <a href="/dashboard" target="_blank" rel="noopener">Open dashboard ↗</a>
   </div>
   <div class="status" id="status" aria-live="polite"></div>
   <div class="grid">
     <div class="phone">
-      <header>Patient's phone<small id="phone-label"></small></header>
+      <header>Caller's phone<small id="phone-label"></small></header>
       <div class="thread" id="thread"></div>
-      <form id="form"><input id="text" placeholder="Text the clinic…" autocomplete="off" aria-label="Message"><button class="btn" id="send">Send</button></form>
+      <form id="form"><input id="text" placeholder="Text the business…" autocomplete="off" aria-label="Message"><button class="btn" id="send">Send</button></form>
     </div>
     <div class="desk">
       <h2>Front desk alerts (SMS)</h2>
@@ -64,7 +64,7 @@ input,select{font:inherit;border:1px solid var(--line);border-radius:10px;paddin
 const $ = (id) => document.getElementById(id);
 let busy = false;
 
-function params() { return { clinic: $("clinic").value, phone: $("phone").value.trim() }; }
+function params() { return { business: $("business").value, phone: $("phone").value.trim() }; }
 
 async function post(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -73,15 +73,25 @@ async function post(path, body) {
   return data;
 }
 
+async function loadBusinesses() {
+  const r = await fetch("/dev/businesses");
+  if (!r.ok) return;
+  const { businesses } = await r.json();
+  const sel = $("business");
+  sel.textContent = "";
+  businesses.forEach(b => { const o = document.createElement("option"); o.value = b.id; o.textContent = `${b.name} (${b.vertical})`; sel.append(o); });
+}
+
 async function load() {
-  const { clinic, phone } = params();
+  const { business, phone } = params();
+  if (!business) return;
   $("phone-label").textContent = phone;
-  const r = await fetch(`/dev/sms?clinic=${encodeURIComponent(clinic)}&phone=${encodeURIComponent(phone)}`);
+  const r = await fetch(`/dev/sms?business=${encodeURIComponent(business)}&phone=${encodeURIComponent(phone)}`);
   if (!r.ok) return;
   const data = await r.json();
   const t = $("thread"); const atBottom = t.scrollHeight - t.scrollTop - t.clientHeight < 40;
   t.textContent = "";
-  data.patient.forEach(m => { const d = document.createElement("div"); d.className = "msg " + (m.direction === "in" ? "out" : "in"); d.textContent = m.body; t.append(d); });
+  data.contact.forEach(m => { const d = document.createElement("div"); d.className = "msg " + (m.direction === "in" ? "out" : "in"); d.textContent = m.body; t.append(d); });
   if (atBottom) t.scrollTop = t.scrollHeight;
   const a = $("alerts"); a.textContent = "";
   if (!data.frontDesk.length) a.innerHTML = "<li>No alerts yet.</li>";
@@ -110,8 +120,9 @@ $("form").addEventListener("submit", (e) => {
   });
 });
 $("phone").addEventListener("change", load);
+$("business").addEventListener("change", load);
 setInterval(load, 3000);
-load();
+loadBusinesses().then(load);
 </script>
 </body>
 </html>

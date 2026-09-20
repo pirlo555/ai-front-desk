@@ -96,8 +96,8 @@ dialog::backdrop{background:rgba(6,20,17,.45)}
 <div class="wrap">
   <form class="login" id="login" hidden>
     <h1>Front desk sign in</h1>
-    <p>See new patient leads from your website chat and missed-call texts.</p>
-    <label>Clinic ID <input id="login-clinic" autocomplete="username" required value="brisa"></label>
+    <p>See new leads from your website chat and missed-call texts.</p>
+    <label>Business ID <input id="login-business" autocomplete="username" required value="brisa"></label>
     <label>Password <input id="login-password" type="password" autocomplete="current-password" required></label>
     <p class="error" id="login-error" hidden></p>
     <button class="btn" type="submit">Sign in</button>
@@ -105,7 +105,7 @@ dialog::backdrop{background:rgba(6,20,17,.45)}
 
   <section id="app" hidden>
     <div class="top">
-      <h1 id="clinic-name">Leads<small>Updates every 15 seconds</small></h1>
+      <h1 id="business-name">Leads<small>Updates every 15 seconds</small></h1>
       <button class="btn ghost" id="logout">Sign out</button>
     </div>
     <dl class="stats" id="stats"></dl>
@@ -125,10 +125,12 @@ dialog::backdrop{background:rgba(6,20,17,.45)}
 </dialog>
 
 <script>
-const TREATMENT = {implant:"Dental implant",invisalign:"Invisalign",veneers:"Veneers",crown:"Crown",root_canal:"Root canal",extraction:"Extraction",emergency:"Emergency",whitening:"Whitening",filling:"Filling",cleaning:"Cleaning & exam",kids:"Kids' visit",other:"General visit"};
-const HIGH_VALUE = new Set(["implant","invisalign","veneers","crown","root_canal"]);
 const STATUS = {requested:"Appointment requested",callback:"Wants a call",followup:"Still deciding"};
 const DESK = {new:"New",contacted:"Contacted",confirmed:"Appointment confirmed",closed:"Closed"};
+
+// Labels depend on the industry, so they come from the server after sign-in.
+let biz = {jobTypes:{}, highValue:[], contact:{one:"customer",plural:"customers"}, qualifierLabel:"", qualifierEmpty:""};
+let highValue = new Set();
 
 let leads = [], filter = "open", timer = null;
 const $ = (id) => document.getElementById(id);
@@ -159,9 +161,11 @@ function showLogin() {
   $("app").hidden = true; $("login").hidden = false;
 }
 
-async function showApp(clinic) {
+async function showApp(business) {
   $("login").hidden = true; $("app").hidden = false;
-  $("clinic-name").firstChild.textContent = clinic.name;
+  biz = business;
+  highValue = new Set(business.highValue || []);
+  $("business-name").firstChild.textContent = business.name;
   await refresh();
   clearInterval(timer);
   timer = setInterval(() => refresh().catch(() => {}), 15000);
@@ -190,13 +194,13 @@ function render() {
     l.desk_status === "new" || l.desk_status === "contacted");
 
   const ul = $("leads"); ul.textContent = "";
-  if (!shown.length) { ul.append(el("li", "empty", leads.length ? "Nothing here. Try another filter." : "No leads yet. They appear here as soon as the assistant learns a patient's name and what they need.")); return; }
+  if (!shown.length) { ul.append(el("li", "empty", leads.length ? "Nothing here. Try another filter." : `No leads yet. They appear here as soon as the assistant learns a ${biz.contact.one}'s name and what they need.`)); return; }
 
   shown.forEach(l => {
     const li = el("li", "lead" + (l.urgency === "emergency" ? " urgent" : ""));
     const left = el("div");
     const name = el("div", "name", l.name);
-    const pr = l.urgency === "emergency" ? ["urgent","Urgent"] : l.urgency === "soon" ? ["urgent","Soon"] : HIGH_VALUE.has(l.treatment) ? ["value","High value"] : ["routine","Routine"];
+    const pr = l.urgency === "emergency" ? ["urgent","Urgent"] : l.urgency === "soon" ? ["urgent","Soon"] : highValue.has(l.job_type) ? ["value","High value"] : ["routine","Routine"];
     name.append(el("span", "chip " + pr[0], pr[1]), el("span", "chip lang", l.language.toUpperCase()));
     const meta = el("div", "meta", `${l.phone || "no phone yet"} · ${l.channel === "sms" ? "Missed call → text" : "Website chat"} · ${when(l.updated_at)}`);
     left.append(name, meta);
@@ -214,7 +218,9 @@ function render() {
 
     const facts = el("div", "facts");
     const fact = (k, v) => { const sp = el("span"); sp.append(el("b", null, k + ": "), document.createTextNode(v)); return sp; };
-    facts.append(fact("Needs", TREATMENT[l.treatment] || "General visit"), fact("Insurance", l.insurance || "None / unknown"), fact("Status", STATUS[l.status] || l.status));
+    facts.append(fact("Needs", biz.jobTypes[l.job_type] || "Other"));
+    if (biz.qualifierLabel) facts.append(fact(biz.qualifierLabel, l.qualifier || biz.qualifierEmpty));
+    facts.append(fact("Status", STATUS[l.status] || l.status));
     if (l.preferred_time) facts.append(fact("Prefers", l.preferred_time));
 
     li.append(left, actions, facts);
@@ -227,7 +233,8 @@ async function openConversation(lead) {
   const data = await api(`/conversations/${lead.conversation_id}`);
   $("convo-title").textContent = `${lead.name} · ${data.channel === "sms" ? data.contact : "Website chat"}`;
   const t = $("convo-thread"); t.textContent = "";
-  data.messages.forEach(m => { const b = el("div", "msg " + m.role, m.content); b.append(el("time", null, (m.role === "user" ? "Patient · " : "Assistant · ") + when(m.created_at))); t.append(b); });
+  const who = biz.contact.one.charAt(0).toUpperCase() + biz.contact.one.slice(1);
+  data.messages.forEach(m => { const b = el("div", "msg " + m.role, m.content); b.append(el("time", null, (m.role === "user" ? who + " · " : "Assistant · ") + when(m.created_at))); t.append(b); });
   $("convo").showModal();
   t.scrollTop = t.scrollHeight;
 }
@@ -243,17 +250,17 @@ $("login").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("login-error").hidden = true;
   try {
-    const r = await fetch("/api/desk/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clinic: $("login-clinic").value.trim(), password: $("login-password").value }) });
+    const r = await fetch("/api/desk/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ business: $("login-business").value.trim(), password: $("login-password").value }) });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error || "Sign in failed.");
     $("login-password").value = "";
-    showApp(data.clinic);
+    showApp(data.business);
   } catch (err) { $("login-error").textContent = err.message; $("login-error").hidden = false; }
 });
 
 $("logout").addEventListener("click", async () => { await fetch("/api/desk/logout", { method: "POST" }); showLogin(); });
 
-fetch("/api/desk/me").then(r => r.ok ? r.json() : null).then(d => d ? showApp(d.clinic) : showLogin()).catch(showLogin);
+fetch("/api/desk/me").then(r => r.ok ? r.json() : null).then(d => d ? showApp(d.business) : showLogin()).catch(showLogin);
 </script>
 </body>
 </html>

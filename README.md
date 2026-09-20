@@ -1,80 +1,109 @@
-# Dental Leads Agent
+# AI Front Desk — recepcionista bilingüe para negocios locales
 
-Asistente bilingüe (inglés/español) para clínicas dentales en EE. UU.:
+Asistente bilingüe (inglés/español) que contesta por el chat de la web del negocio
+y por SMS cuando nadie coge el teléfono. Captura el nombre, qué necesita la persona
+y cuándo quiere la cita, y avisa a recepción. Funciona para **cualquier negocio local**:
+clínicas dentales, consultas médicas, fontaneros y aire acondicionado, talleres y abogados.
 
-- **Chat en la web de la clínica**: responde preguntas, califica al paciente y toma su solicitud de cita.
-- **SMS por llamada perdida**: si nadie contesta, le escribe al paciente por mensaje de texto y sigue la conversación.
-- **Panel de recepción** (`/dashboard`): la clínica ve los leads, lee las conversaciones y marca su estado.
-- **Avisos a recepción** por SMS cuando entra un lead nuevo, urgente o una solicitud de cita (sin datos del paciente en el SMS).
+## Qué hace
 
-Las citas quedan como **solicitud**: el asistente nunca dice que está confirmada. Recepción la confirma.
+- **Llamada perdida → mensaje de texto.** Si nadie contesta, el sistema le escribe al
+  que llamó en segundos y sigue la conversación por SMS.
+- **Chat en la web del negocio.** Una sola línea de código en su página.
+- **Habla español e inglés** y responde en el idioma de la persona.
+- **Panel de recepción** con los contactos nuevos, lo que necesitan y su urgencia.
+- **Alertas por SMS** a recepción cuando entra un contacto urgente o hace falta una persona.
 
----
+## Sectores incluidos
 
-## Cómo arrancarlo en tu computadora
+Cada negocio elige uno en su archivo con el campo `vertical`. El sector decide qué datos
+pide el asistente, cómo se etiquetan los trabajos en el panel y qué reglas de seguridad aplica.
 
-1. Abre una terminal en `D:\dental-leads-agent`.
-2. Si es la primera vez: `npm install`
-3. Arranca: `npm start`
-4. Abre en el navegador:
-   - Web de prueba con el chat: http://localhost:3000/demo/brisa
-   - Simulador de SMS: http://localhost:3000/simulator
-   - Panel de recepción: http://localhost:3000/dashboard (clínica `brisa`, contraseña en el archivo `.env`, línea `CLINIC_BRISA_PASSWORD`)
+| `vertical` | Para quién | Dato clave que pide |
+|---|---|---|
+| `dental` | Clínicas dentales | Seguro médico |
+| `medical` | Consultas médicas y med spas | Seguro médico |
+| `home_services` | Fontanería, aire acondicionado, electricidad, techos, cerrajería | Dirección del servicio |
+| `auto` | Talleres mecánicos | Vehículo (año, marca, modelo) |
+| `legal` | Despachos de abogados | Ciudad y estado del caso |
+| `general` | Cualquier otro negocio local | Ninguno |
 
-Para apagarlo: `Ctrl + C` en la terminal.
+Cada sector trae sus **reglas de seguridad** propias. Por ejemplo: el dental nunca
+diagnostica y manda al 911 ante una infección grave; el de abogados nunca da consejo legal
+ni dice si alguien tiene caso; el de fontanería manda salir de la casa si huele a gas.
 
-## Configuración (archivo `.env`)
+## Poner en marcha
 
-| Variable | Qué es |
-|---|---|
-| `ANTHROPIC_API_KEY` | Clave de Claude. Sin ella, el asistente solo manda un mensaje de "recepción le contactará". |
-| `CLINIC_<ID>_PASSWORD` | Contraseña del panel de cada clínica. |
-| `SESSION_SECRET` | Texto aleatorio para proteger los inicios de sesión. Ya viene generado. |
-| `MOCK_SMS` | `true` = modo prueba (no se envían SMS). `false` = SMS reales con Twilio. |
-| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | Credenciales de Twilio (solo con `MOCK_SMS=false`). |
-| `PUBLIC_BASE_URL` | Dirección pública del servidor cuando esté en internet. |
+```bash
+npm install
+npm run dev
+```
 
-**Nunca compartas el archivo `.env`.**
+Se abre en <http://localhost:3000>:
 
-## Añadir una clínica nueva
+- **Panel de recepción** — <http://localhost:3000/dashboard>
+- **Web de prueba de cada negocio** — `/demo/brisa`, `/demo/rapido-air`, `/demo/costa-legal`
+- **Simulador de SMS** — <http://localhost:3000/simulator> (solo en modo prueba)
 
-1. Copia `clinics/brisa.json` con otro nombre, por ejemplo `clinics/sonrisa.json`.
-2. Cambia `id`, nombre, horario, seguros, ofertas, saludos, `twilioNumber` (su número de Twilio), `frontDeskPhone` (el celular de recepción) y `allowedOrigins` (la web de la clínica, por ejemplo `https://sonrisadental.com`).
-3. Añade su contraseña en `.env`: `CLINIC_SONRISA_PASSWORD=...`
+Las claves van en el archivo `.env`. Copia `.env.example` a `.env` y rellénalo.
+Sin `ANTHROPIC_API_KEY` todo funciona igual, pero el asistente solo manda una
+respuesta genérica en lugar de conversar.
+
+## Añadir un cliente nuevo
+
+1. Copia `businesses/_template.json` y ponle el nombre del negocio, por ejemplo `mi-taller.json`.
+2. Rellena los datos. El archivo `_template.json` explica cada campo por dentro.
+3. Añade la contraseña del panel a `.env`:
+   `BUSINESS_MI_TALLER_PASSWORD=algo-largo-y-dificil`
+   (el `id` en mayúsculas, con guiones convertidos en guiones bajos)
 4. Reinicia el servidor.
 
-## Instalar el chat en la web de una clínica
+Ya tiene su panel, su web de prueba y su chat. No hay que tocar código.
 
-La clínica pega esta línea en su página web (antes de `</body>`):
+Para poner el chat en la web real del cliente, él añade esta línea a su página:
 
 ```html
-<script src="https://TU-SERVIDOR/widget.js" data-clinic="sonrisa" defer></script>
+<script src="https://TU-SERVIDOR/widget.js" data-business="mi-taller" defer></script>
 ```
 
-## Conectar Twilio (SMS reales)
+y tú añades su dominio a `allowedOrigins` en su archivo JSON.
 
-1. Compra un número de Twilio para la clínica y regístralo para SMS (A2P 10DLC).
-2. En el número, configura:
-   - **A call comes in** → `POST https://TU-SERVIDOR/twilio/voice/<id-clinica>`
-   - **A message comes in** → `POST https://TU-SERVIDOR/twilio/sms/<id-clinica>`
-3. En la compañía telefónica de la clínica, activa **desvío de llamadas cuando no contestan / ocupado** hacia el número de Twilio.
-4. En `.env`: `MOCK_SMS=false`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `PUBLIC_BASE_URL`.
+## Modo prueba y modo real
 
-Twilio necesita una dirección pública (https), así que esto se prueba cuando el servidor esté en internet.
+`MOCK_SMS=true` en `.env` (lo normal mientras desarrollas): no se manda ningún SMS de
+verdad. Todo queda guardado y se ve en el simulador.
 
-## Antes de usarlo con pacientes reales (HIPAA)
+`MOCK_SMS=false`: se mandan SMS reales por Twilio. Necesita `TWILIO_ACCOUNT_SID`
+y `TWILIO_AUTH_TOKEN`, y que cada negocio tenga su `twilioNumber`.
 
-- Firma un **BAA** con la clínica y usa proveedores que firmen BAA contigo (Twilio, Anthropic, hosting/base de datos).
-- Pon el servidor en un hosting compatible con HIPAA y con copias de seguridad de `data/app.db`.
-- Revisa el contrato y los textos de consentimiento de SMS con un abogado.
+En Twilio, para cada número:
+- **A call comes in** → `https://TU-SERVIDOR/twilio/voice/<id-del-negocio>`
+- **A message comes in** → `https://TU-SERVIDOR/twilio/sms/<id-del-negocio>`
 
-## Estructura
+## Cómo está organizado
 
 ```
-clinics/          Configuración de cada clínica (JSON)
-public/           Chat (widget.js), panel, simulador y web de prueba
-src/agent.js      Instrucciones y llamada a Claude
-src/conversation.js  Flujo de cada mensaje, leads y avisos
-src/db.js         Base de datos (SQLite en data/app.db)
-src/routes/       Rutas: chat, panel, Twilio y simulador
+businesses/          un archivo JSON por cliente (_template.json es la plantilla)
+src/verticals.js     los sectores: qué pide cada uno y sus reglas de seguridad
+src/config.js        lee y valida los archivos de negocio
+src/agent.js         construye las instrucciones y habla con Claude
+src/conversation.js  la lógica de una conversación: bajas, avisos, contactos
+src/db.js            base de datos SQLite
+src/routes/          chat web, webhooks de Twilio, panel, simulador
+public/              panel, widget de chat, webs de prueba, simulador
 ```
+
+## Seguridad
+
+- Cada negocio solo ve lo suyo: el panel filtra siempre por negocio.
+- Los webhooks de Twilio se verifican con firma cuando el modo real está activo.
+- Límite de mensajes por minuto en el chat y en los intentos de login.
+- El asistente nunca pide número de seguro social, fecha de nacimiento ni tarjetas.
+- Las bajas por SMS (STOP / BAJA) se respetan y quedan guardadas.
+
+## Pendiente
+
+- Voz: que el asistente conteste el teléfono hablando, no solo con SMS.
+- Conexión con la agenda real (Google Calendar) para confirmar citas de verdad.
+- Recordatorios y seguimiento automático.
+- Cobro de suscripciones.

@@ -8,19 +8,19 @@ function getTwilio() {
   return client;
 }
 
-/** Sends an SMS from the clinic's number. In mock mode it is only saved to the database. */
-export async function sendSms(clinic, to, body) {
-  const from = clinic.twilioNumber || "clinic";
+/** Sends an SMS from the business's number. In mock mode it is only saved to the database. */
+export async function sendSms(business, to, body) {
+  const from = business.twilioNumber || "business";
   if (env.mockSms) {
-    logSms({ clinicId: clinic.id, direction: "out", to, from, body, status: "mock" });
+    logSms({ businessId: business.id, direction: "out", to, from, body, status: "mock" });
     console.log(`[sms:mock] ${from} -> ${to}: ${body}`);
     return;
   }
   try {
-    const msg = await getTwilio().messages.create({ from: clinic.twilioNumber, to, body });
-    logSms({ clinicId: clinic.id, direction: "out", to, from, body, status: msg.status });
+    const msg = await getTwilio().messages.create({ from: business.twilioNumber, to, body });
+    logSms({ businessId: business.id, direction: "out", to, from, body, status: msg.status });
   } catch (err) {
-    logSms({ clinicId: clinic.id, direction: "out", to, from, body, status: `error:${err.code || "unknown"}` });
+    logSms({ businessId: business.id, direction: "out", to, from, body, status: `error:${err.code || "unknown"}` });
     console.error(`[sms] failed to send to ${to}:`, err.message);
   }
 }

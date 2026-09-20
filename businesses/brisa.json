@@ -1,6 +1,7 @@
 {
   "id": "brisa",
   "name": "Brisa Family Dental",
+  "vertical": "dental",
   "timezone": "America/Chicago",
   "phone": "(713) 555-0100",
   "address": "2215 Airline Dr, Houston, TX 77009",
@@ -14,7 +15,7 @@
     "sat": "9:00am-2:00pm",
     "sun": null
   },
-  "insurance": [
+  "qualifierOptions": [
     "Delta Dental PPO",
     "Cigna PPO",
     "MetLife PPO",

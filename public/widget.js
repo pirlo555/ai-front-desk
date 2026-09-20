@@ -1,13 +1,14 @@
 /*
- * Chat widget. Clinics add one line to their website:
- *   <script src="https://YOUR-SERVER/widget.js" data-clinic="brisa" defer></script>
+ * Chat widget. The business adds one line to their website:
+ *   <script src="https://YOUR-SERVER/widget.js" data-business="brisa" defer></script>
  */
 (function () {
   const script = document.currentScript;
   if (!script) return;
-  const clinicId = script.dataset.clinic;
+  // data-clinic is the older attribute, still read so existing sites keep working.
+  const businessId = script.dataset.business || script.dataset.clinic;
   const base = new URL(script.src).origin;
-  const storeKey = `dla:${clinicId}`;
+  const storeKey = `aifd:${businessId}`;
 
   function load() {
     try { return JSON.parse(localStorage.getItem(storeKey)) || null; } catch { return null; }
@@ -57,7 +58,7 @@
       .note { font-size: 11px; color: #7A8D88; text-align: center; padding: 0 10px 8px; background: #fff; }
       button:focus-visible, input:focus-visible { outline: 2px solid #10231F; outline-offset: 2px; }
     </style>
-    <div class="panel" hidden role="dialog" aria-label="Chat with the clinic">
+    <div class="panel" hidden role="dialog" aria-label="Chat with us">
       <header><div><b class="name">Chat</b><small>Replies in seconds · English / Español</small></div>
         <button class="close" aria-label="Close chat">×</button></header>
       <div class="thread" aria-live="polite"></div>
@@ -88,7 +89,7 @@
     state.messages.forEach((m) => bubble(m.role, m.text));
   }
 
-  fetch(`${base}/api/clinics/${encodeURIComponent(clinicId)}/public`)
+  fetch(`${base}/api/businesses/${encodeURIComponent(businessId)}/public`)
     .then((r) => (r.ok ? r.json() : Promise.reject()))
     .then((c) => {
       host.style.setProperty("--c", c.color);
@@ -98,7 +99,7 @@
       render();
       document.body.appendChild(host);
     })
-    .catch(() => console.warn("[chat widget] clinic not available"));
+    .catch(() => console.warn("[chat widget] business not available"));
 
   host.style.setProperty("--c", "#0F6B5C");
 
@@ -121,10 +122,10 @@
       const r = await fetch(`${base}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clinic: clinicId, session: state.session, message: text }),
+        body: JSON.stringify({ business: businessId, session: state.session, message: text }),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.error || "The chat is not available right now. Call the clinic instead.");
+      if (!r.ok) throw new Error(data.error || "The chat is not available right now. Please call us instead.");
       pending.remove();
       if (data.reply) {
         state.messages.push({ role: "assistant", text: data.reply });

@@ -1,0 +1,45 @@
+{
+  "id": "rapido-air",
+  "name": "Rapido Air & Plumbing",
+  "vertical": "home_services",
+  "timezone": "America/New_York",
+  "phone": "(305) 555-0140",
+  "address": "1480 NW 27th Ave, Miami, FL 33125",
+  "color": "#1F5FA8",
+  "hours": {
+    "mon": "7:00am-7:00pm",
+    "tue": "7:00am-7:00pm",
+    "wed": "7:00am-7:00pm",
+    "thu": "7:00am-7:00pm",
+    "fri": "7:00am-7:00pm",
+    "sat": "8:00am-4:00pm",
+    "sun": null
+  },
+  "qualifierOptions": [
+    "Miami-Dade County",
+    "Hialeah",
+    "Coral Gables",
+    "Doral",
+    "Kendall",
+    "Broward County south of Hollywood"
+  ],
+  "services": [
+    "air conditioning repair", "A/C installation and replacement", "duct cleaning", "maintenance plans",
+    "water heater repair and replacement", "leak detection", "clogged drains", "toilet and faucet repair",
+    "repiping", "emergency service"
+  ],
+  "offers": [
+    "$59 diagnostic visit, waived if you approve the repair the same day.",
+    "Free estimate on a new A/C system.",
+    "Comfort Plan: $199 per year, two tune-ups and priority scheduling.",
+    "Financing available on installations over $2,000."
+  ],
+  "extraNotes": "Licensed and insured in Florida. Bilingual technicians. After-hours emergency service available at a higher rate.",
+  "greeting": {
+    "web": "Hi! I'm the virtual assistant for Rapido Air & Plumbing. ¿Prefiere español? Tell me what's going on and I'll get a technician scheduled.",
+    "sms": "Hi, this is Rapido Air & Plumbing - sorry we missed your call! What's going on? / ¡Hola! Perdón por no contestar, ¿qué problema tiene? Reply STOP to opt out."
+  },
+  "twilioNumber": "+13055550140",
+  "frontDeskPhone": "+13055550149",
+  "allowedOrigins": []
+}

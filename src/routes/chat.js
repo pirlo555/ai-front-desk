@@ -1,15 +1,15 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { env, getClinic } from "../config.js";
-import { handlePatientMessage } from "../conversation.js";
+import { env, getBusiness } from "../config.js";
+import { handleIncomingMessage } from "../conversation.js";
 
 const router = express.Router();
 
-function allowedOrigin(clinic, origin) {
+function allowedOrigin(business, origin) {
   if (!origin) return true; // same-origin requests don't send one
   if (origin === env.publicBaseUrl) return true;
   if (!env.isProd && /^http:\/\/localhost(:\d+)?$/.test(origin)) return true;
-  return clinic.allowedOrigins.includes(origin);
+  return business.allowedOrigins.includes(origin);
 }
 
 function cors(req, res, next) {
@@ -26,26 +26,32 @@ function cors(req, res, next) {
 
 router.use(cors);
 
-router.get("/clinics/:clinicId/public", (req, res) => {
-  const clinic = getClinic(req.params.clinicId);
-  if (!clinic || !allowedOrigin(clinic, req.get("Origin"))) return res.status(404).json({ error: "Clinic not found." });
-  res.json({ id: clinic.id, name: clinic.name, phone: clinic.phone, greeting: clinic.greeting.web, color: clinic.color || "#0F6B5C" });
+router.get("/businesses/:businessId/public", (req, res) => {
+  const business = getBusiness(req.params.businessId);
+  if (!business || !allowedOrigin(business, req.get("Origin"))) return res.status(404).json({ error: "Business not found." });
+  res.json({
+    id: business.id,
+    name: business.name,
+    phone: business.phone,
+    greeting: business.greeting.web,
+    color: business.color,
+  });
 });
 
 const chatLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: "draft-8", legacyHeaders: false });
 
 router.post("/chat", chatLimiter, express.json({ limit: "10kb" }), async (req, res) => {
-  const { clinic: clinicId, session, message } = req.body || {};
-  const clinic = getClinic(clinicId);
-  if (!clinic || !allowedOrigin(clinic, req.get("Origin"))) return res.status(404).json({ error: "Clinic not found." });
-  if (typeof session !== "string" || !/^[A-Za-z0-9-]{16,64}$/.test(session)) {
+  const body = req.body || {};
+  const business = getBusiness(body.business ?? body.clinic);
+  if (!business || !allowedOrigin(business, req.get("Origin"))) return res.status(404).json({ error: "Business not found." });
+  if (typeof body.session !== "string" || !/^[A-Za-z0-9-]{16,64}$/.test(body.session)) {
     return res.status(400).json({ error: "Invalid chat session. Reload the page and try again." });
   }
-  const text = typeof message === "string" ? message.trim() : "";
+  const text = typeof body.message === "string" ? body.message.trim() : "";
   if (!text) return res.status(400).json({ error: "Write a message first." });
   if (text.length > 1000) return res.status(400).json({ error: "Message is too long. Keep it under 1,000 characters." });
 
-  const reply = await handlePatientMessage({ clinic, channel: "web", contact: `web:${session}`, text });
+  const reply = await handleIncomingMessage({ business, channel: "web", contact: `web:${body.session}`, text });
   res.json({ reply });
 });
 

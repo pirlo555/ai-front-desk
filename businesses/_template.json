@@ -1,0 +1,54 @@
+{
+  "_readme": [
+    "COPY THIS FILE to add a new client. Name it after the business, e.g. mi-taller.json.",
+    "Files that start with _ are ignored, so this template never goes live.",
+    "",
+    "id:               lowercase letters, numbers and dashes only. It appears in the web address.",
+    "vertical:         dental | medical | home_services | auto | legal | general",
+    "timezone:         America/New_York (Miami), America/Chicago, America/Los_Angeles ...",
+    "hours:            all seven days are required. Use null when the business is closed.",
+    "qualifierOptions: the list of things the assistant checks against. It changes by vertical:",
+    "                    dental / medical -> insurance plans accepted",
+    "                    home_services    -> cities and areas served",
+    "                    auto             -> makes serviced",
+    "                    legal            -> states and areas served",
+    "                    general          -> leave it empty",
+    "offers:           only prices written here are ever quoted. Leave it empty if unsure.",
+    "twilioNumber:     the Twilio number for this business, +1 followed by 10 digits.",
+    "frontDeskPhone:   where alerts are texted. Leave empty to turn alerts off.",
+    "allowedOrigins:   the client's real website, e.g. [\"https://www.theirsite.com\"].",
+    "",
+    "Then add the dashboard password to .env:  BUSINESS_<ID>_PASSWORD=something-long",
+    "using the id in capitals with dashes as underscores, e.g. BUSINESS_MI_TALLER_PASSWORD."
+  ],
+  "id": "mi-negocio",
+  "name": "Business Name",
+  "vertical": "general",
+  "timezone": "America/New_York",
+  "phone": "(305) 555-0100",
+  "address": "123 Main St, Miami, FL 33130",
+  "color": "#0F6B5C",
+  "hours": {
+    "mon": "9:00am-6:00pm",
+    "tue": "9:00am-6:00pm",
+    "wed": "9:00am-6:00pm",
+    "thu": "9:00am-6:00pm",
+    "fri": "9:00am-6:00pm",
+    "sat": null,
+    "sun": null
+  },
+  "qualifierOptions": [],
+  "services": [
+    "first service",
+    "second service"
+  ],
+  "offers": [],
+  "extraNotes": "Anything else the assistant should know: parking, languages, payment methods.",
+  "greeting": {
+    "web": "Hi! I'm the virtual assistant for Business Name. ¿Prefiere español? How can I help?",
+    "sms": "Hi, this is Business Name - sorry we missed your call! How can we help? / ¡Hola! Perdón por no contestar, ¿en qué le ayudamos? Reply STOP to opt out."
+  },
+  "twilioNumber": "",
+  "frontDeskPhone": "",
+  "allowedOrigins": []
+}

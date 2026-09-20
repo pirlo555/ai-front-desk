@@ -2,7 +2,7 @@ import "dotenv/config";
 import path from "node:path";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { ROOT, env, clinics } from "./config.js";
+import { ROOT, env, businesses } from "./config.js";
 import chatRoutes from "./routes/chat.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import twilioRoutes from "./routes/twilio.js";
@@ -28,8 +28,8 @@ app.use("/twilio", twilioRoutes);
 
 app.get("/", (req, res) => res.redirect("/dashboard"));
 app.get("/dashboard", (req, res) => res.sendFile(path.join(pub, "dashboard.html")));
-app.get("/demo/:clinicId", (req, res) => {
-  if (!clinics.has(req.params.clinicId)) return res.status(404).send("Unknown clinic");
+app.get("/demo/:businessId", (req, res) => {
+  if (!businesses.has(req.params.businessId)) return res.status(404).send("Unknown business");
   res.sendFile(path.join(pub, "demo.html"));
 });
 
@@ -44,9 +44,11 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(env.port, () => {
-  console.log(`\nDental leads agent running at ${env.publicBaseUrl}`);
+  console.log(`\nAI front desk running at ${env.publicBaseUrl}`);
   console.log(`  Dashboard:      ${env.publicBaseUrl}/dashboard`);
-  for (const id of clinics.keys()) console.log(`  Demo website:   ${env.publicBaseUrl}/demo/${id}`);
+  for (const b of businesses.values()) {
+    console.log(`  Demo website:   ${env.publicBaseUrl}/demo/${b.id}   (${b.name} - ${b.pack.label})`);
+  }
   if (env.mockSms) console.log(`  SMS simulator:  ${env.publicBaseUrl}/simulator   (MOCK_SMS on: no real texts are sent)`);
   if (!process.env.ANTHROPIC_API_KEY) console.warn("\n  ANTHROPIC_API_KEY is not set: the assistant will only send the fallback reply.");
 });

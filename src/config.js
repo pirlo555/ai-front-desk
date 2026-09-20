@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { getVertical, VERTICAL_IDS } from "./verticals.js";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -30,38 +31,59 @@ if (!env.mockSms && (!env.twilioAccountSid || !env.twilioAuthToken)) {
   throw new Error("MOCK_SMS=false requires TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.");
 }
 
-const REQUIRED = ["id", "name", "timezone", "phone", "address", "hours", "insurance", "services", "greeting"];
+const REQUIRED = ["id", "name", "vertical", "timezone", "phone", "address", "hours", "services", "greeting"];
 const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+const BUSINESS_DIR = path.join(ROOT, "businesses");
 
-function loadClinics() {
-  const dir = path.join(ROOT, "clinics");
+function loadBusinesses() {
+  if (!fs.existsSync(BUSINESS_DIR)) throw new Error(`Missing the "businesses" folder at ${BUSINESS_DIR}.`);
   const map = new Map();
-  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".json"))) {
-    const clinic = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
-    const missing = REQUIRED.filter((k) => clinic[k] == null);
-    if (missing.length) throw new Error(`clinics/${file} is missing: ${missing.join(", ")}`);
-    if (!/^[a-z0-9-]+$/.test(clinic.id)) throw new Error(`clinics/${file}: id must be lowercase letters, numbers or dashes.`);
-    for (const d of DAYS) if (!(d in clinic.hours)) throw new Error(`clinics/${file}: hours.${d} is missing (use null when closed).`);
-    clinic.allowedOrigins ??= [];
-    clinic.frontDeskPhone ??= "";
-    clinic.twilioNumber ??= "";
-    clinic.offers ??= [];
-    map.set(clinic.id, clinic);
+  // Files starting with "_" are templates, not real businesses.
+  for (const file of fs.readdirSync(BUSINESS_DIR).filter((f) => f.endsWith(".json") && !f.startsWith("_"))) {
+    const where = `businesses/${file}`;
+    let business;
+    try {
+      business = JSON.parse(fs.readFileSync(path.join(BUSINESS_DIR, file), "utf8"));
+    } catch (err) {
+      throw new Error(`${where} is not valid JSON: ${err.message}`);
+    }
+    const missing = REQUIRED.filter((k) => business[k] == null);
+    if (missing.length) throw new Error(`${where} is missing: ${missing.join(", ")}`);
+    if (!/^[a-z0-9-]+$/.test(business.id)) throw new Error(`${where}: id must be lowercase letters, numbers or dashes.`);
+    if (map.has(business.id)) throw new Error(`${where}: the id "${business.id}" is already used by another business file.`);
+    if (!VERTICAL_IDS.includes(business.vertical)) {
+      throw new Error(`${where}: vertical must be one of ${VERTICAL_IDS.join(", ")} (got "${business.vertical}").`);
+    }
+    for (const d of DAYS) if (!(d in business.hours)) throw new Error(`${where}: hours.${d} is missing (use null when closed).`);
+    if (!business.greeting.web || !business.greeting.sms) throw new Error(`${where}: greeting needs both "web" and "sms".`);
+
+    business.pack = getVertical(business.vertical);
+    // "insurance" is the older name for this list, kept so existing dental files still load.
+    business.qualifierOptions ??= business.insurance ?? [];
+    business.allowedOrigins ??= [];
+    business.frontDeskPhone ??= "";
+    business.twilioNumber ??= "";
+    business.offers ??= [];
+    business.color ??= "#0F6B5C";
+    map.set(business.id, business);
   }
+  if (!map.size) throw new Error(`No business files found in ${BUSINESS_DIR}. Copy businesses/_template.json and edit it.`);
   return map;
 }
 
-export const clinics = loadClinics();
+export const businesses = loadBusinesses();
 
-export function getClinic(id) {
-  return clinics.get(String(id || "")) || null;
+export function getBusiness(id) {
+  return businesses.get(String(id || "")) || null;
 }
 
-export function getClinicByTwilioNumber(number) {
-  for (const c of clinics.values()) if (c.twilioNumber && c.twilioNumber === number) return c;
+export function getBusinessByTwilioNumber(number) {
+  for (const b of businesses.values()) if (b.twilioNumber && b.twilioNumber === number) return b;
   return null;
 }
 
-export function clinicPassword(clinicId) {
-  return process.env[`CLINIC_${clinicId.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_PASSWORD`] || "";
+export function businessPassword(businessId) {
+  const key = businessId.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  // CLINIC_ is the older prefix, still read so existing .env files keep working.
+  return process.env[`BUSINESS_${key}_PASSWORD`] || process.env[`CLINIC_${key}_PASSWORD`] || "";
 }
