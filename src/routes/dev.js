@@ -1,5 +1,6 @@
 import express from "express";
 import { getBusiness, businesses } from "../config.js";
+import { pick } from "../verticals.js";
 import { listSms, logSms } from "../db.js";
 import { handleMissedCall, handleIncomingMessage } from "../conversation.js";
 
@@ -12,7 +13,7 @@ const PHONE = /^\+1\d{10}$/;
 // Fills the simulator's business picker.
 router.get("/businesses", (req, res) => {
   res.json({
-    businesses: [...businesses.values()].map((b) => ({ id: b.id, name: b.name, vertical: b.pack.label })),
+    businesses: [...businesses.values()].map((b) => ({ id: b.id, name: b.name, vertical: pick(b.pack.label, b.language) })),
   });
 });
 

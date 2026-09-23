@@ -1,0 +1,51 @@
+{
+  "id": "taller-hermanos",
+  "name": "Hermanos Auto Repair",
+  "vertical": "auto",
+  "language": "es",
+  "timezone": "America/New_York",
+  "phone": "(305) 555-0190",
+  "address": "3340 NW 7th St, Miami, FL 33125",
+  "color": "#B4232F",
+  "hours": {
+    "mon": "7:30am-6:00pm",
+    "tue": "7:30am-6:00pm",
+    "wed": "7:30am-6:00pm",
+    "thu": "7:30am-6:00pm",
+    "fri": "7:30am-6:00pm",
+    "sat": "8:00am-2:00pm",
+    "sun": null
+  },
+  "qualifierOptions": [
+    "Toyota, Honda, Nissan, Hyundai, Kia",
+    "Ford, Chevrolet, Dodge, Jeep",
+    "BMW, Mercedes y Audi solo mantenimiento y frenos",
+    "No trabajamos camiones diésel ni vehículos comerciales grandes"
+  ],
+  "services": [
+    "diagnóstico con escáner",
+    "cambio de aceite y mantenimiento",
+    "frenos",
+    "neumáticos y alineación",
+    "aire acondicionado del carro",
+    "motor",
+    "transmisión",
+    "suspensión",
+    "baterías y sistema eléctrico",
+    "inspección antes de comprar un carro usado"
+  ],
+  "offers": [
+    "Diagnóstico $45, se descuenta si aprueba la reparación el mismo día.",
+    "Cambio de aceite sintético desde $69.",
+    "Presupuesto por escrito antes de tocar nada.",
+    "Financiación disponible en reparaciones de más de $800."
+  ],
+  "extraNotes": "Grúa disponible si el carro no arranca. Mecánicos bilingües. Sala de espera con wifi. No hacemos trabajos de chapa y pintura: los referimos.",
+  "greeting": {
+    "web": "¡Hola! Soy el asistente de Hermanos Auto Repair. I can help in English too. Cuénteme qué le pasa a su carro y le aparto una cita.",
+    "sms": "Hola, le habla Hermanos Auto Repair - ¡perdón por no contestar! ¿Qué le pasa a su carro? / Sorry we missed your call! Responda STOP para no recibir más mensajes."
+  },
+  "twilioNumber": "+13055550190",
+  "frontDeskPhone": "+13055550199",
+  "allowedOrigins": []
+}
