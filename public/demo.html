@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Business website demo</title>
+<title>Demo</title>
 <style>
   body { margin: 0; font-family: Georgia, "Times New Roman", serif; color: #1d2b28; background: #fbfaf7; }
-  .bar { background: #fff3cd; color: #5c4700; font: 13px system-ui, sans-serif; padding: 8px 16px; text-align: center; }
+  .bar { background: #fff3cd; color: #5c4700; font: 13px/1.45 system-ui, sans-serif; padding: 9px 16px; text-align: center; }
   main { max-width: 760px; margin: 0 auto; padding: 56px 20px; }
   h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.05; margin: 0 0 16px; }
   p { font-size: 18px; line-height: 1.6; max-width: 58ch; }
@@ -15,18 +15,45 @@
 </style>
 </head>
 <body>
-  <div class="bar">Test page: this stands in for the business's own website. The chat bubble in the corner is the real assistant.</div>
+  <div class="bar" id="bar"></div>
   <main>
-    <h1 id="title">Business website</h1>
-    <p>Open the chat in the bottom-right corner and write as a customer would, in English or Spanish. New leads show up in the dashboard.</p>
+    <h1 id="title"></h1>
+    <p id="lede"></p>
     <div class="fake" aria-hidden="true"><div></div><div></div><div></div></div>
   </main>
   <script>
-    const id = location.pathname.split("/").pop();
-    const s = document.createElement("script");
+    // The prospect opening this link sees it before anything else, so it is
+    // written in the language their own business was set up in.
+    var COPY = {
+      en: {
+        bar: "Example page: this stands in for the business's own website. The chat bubble in the corner is the real assistant.",
+        lede: "Open the chat in the bottom-right corner and write as a customer would, in English or Spanish. New leads show up in the dashboard."
+      },
+      es: {
+        bar: "Página de ejemplo: hace de web del negocio. La burbuja de chat de la esquina sí es el asistente de verdad.",
+        lede: "Abra el chat en la esquina de abajo a la derecha y escriba como lo haría un cliente suyo, en español o en inglés. Los contactos nuevos aparecen en el panel."
+      }
+    };
+
+    var id = location.pathname.split("/").pop();
+    var s = document.createElement("script");
     s.src = "/widget.js"; s.dataset.business = id; s.defer = true;
     document.body.appendChild(s);
-    fetch(`/api/businesses/${id}/public`).then(r => r.json()).then(c => { document.getElementById("title").textContent = c.name; document.title = c.name; });
+
+    function paint(lang, name) {
+      var c = COPY[lang] || COPY.en;
+      document.documentElement.lang = COPY[lang] ? lang : "en";
+      document.getElementById("bar").textContent = c.bar;
+      document.getElementById("lede").textContent = c.lede;
+      document.getElementById("title").textContent = name;
+      document.title = name;
+    }
+
+    paint("es", " ");
+    fetch("/api/businesses/" + encodeURIComponent(id) + "/public")
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (b) { paint(b.language, b.name); })
+      .catch(function () { paint("es", "Demo"); });
   </script>
 </body>
 </html>

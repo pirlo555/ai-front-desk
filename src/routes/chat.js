@@ -47,6 +47,7 @@ router.get("/businesses/:businessId/public", (req, res) => {
     phone: business.phone,
     greeting: business.greeting.web,
     color: business.color,
+    language: business.language,
   });
 });
 
