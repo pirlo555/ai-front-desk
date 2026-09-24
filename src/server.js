@@ -34,7 +34,12 @@ app.get("/demo/:businessId", (req, res) => {
   res.sendFile(path.join(pub, "demo.html"));
 });
 
-if (env.mockSms) {
+// The simulator fakes inbound SMS with no authentication, which is what makes
+// it useful on a laptop and dangerous on a public server: anyone who found the
+// URL could drive real model calls and spend the account's credit. Mock mode
+// alone stopped being a sufficient gate once the app became reachable.
+const devTools = env.mockSms && !env.isProd;
+if (devTools) {
   app.use("/dev", devRoutes);
   app.get("/simulator", (req, res) => res.sendFile(path.join(pub, "simulator.html")));
 }
@@ -50,6 +55,7 @@ app.listen(env.port, () => {
   for (const b of businesses.values()) {
     console.log(`  Demo website:   ${env.publicBaseUrl}/demo/${b.id}   (${b.name} - ${pick(b.pack.label, b.language)})`);
   }
-  if (env.mockSms) console.log(`  SMS simulator:  ${env.publicBaseUrl}/simulator   (MOCK_SMS on: no real texts are sent)`);
+  if (devTools) console.log(`  SMS simulator:  ${env.publicBaseUrl}/simulator   (MOCK_SMS on: no real texts are sent)`);
+  else if (env.mockSms) console.log("  SMS simulator:  off in production (it has no login and would burn API credit)");
   if (!process.env.ANTHROPIC_API_KEY) console.warn("\n  ANTHROPIC_API_KEY is not set: the assistant will only send the fallback reply.");
 });
