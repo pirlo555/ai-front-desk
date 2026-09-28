@@ -67,23 +67,23 @@ router.get("/me", requireBusiness, (req, res) => {
   res.json({ business: describe(req.business) });
 });
 
-router.get("/leads", requireBusiness, (req, res) => {
-  res.json({ leads: db.listLeads(req.business.id) });
+router.get("/leads", requireBusiness, async (req, res) => {
+  res.json({ leads: await db.listLeads(req.business.id) });
 });
 
-router.get("/conversations/:id", requireBusiness, (req, res) => {
-  const conversation = db.getConversation(Number(req.params.id));
+router.get("/conversations/:id", requireBusiness, async (req, res) => {
+  const conversation = await db.getConversation(Number(req.params.id));
   if (!conversation || conversation.business_id !== req.business.id) return res.status(404).json({ error: "Conversation not found." });
   const webVisitor = req.business.language === "es" ? "Visitante de la web" : "Website visitor";
   const contact = conversation.channel === "sms" ? conversation.contact : webVisitor;
-  res.json({ channel: conversation.channel, contact, messages: db.getMessages(conversation.id, 200) });
+  res.json({ channel: conversation.channel, contact, messages: await db.getMessages(conversation.id, 200) });
 });
 
 const DESK_STATUS = ["new", "contacted", "confirmed", "closed"];
-router.patch("/leads/:id", requireBusiness, (req, res) => {
+router.patch("/leads/:id", requireBusiness, async (req, res) => {
   const { desk_status } = req.body || {};
   if (!DESK_STATUS.includes(desk_status)) return res.status(400).json({ error: "Unknown status." });
-  if (!db.updateDeskStatus(Number(req.params.id), req.business.id, desk_status)) return res.status(404).json({ error: "Lead not found." });
+  if (!(await db.updateDeskStatus(Number(req.params.id), req.business.id, desk_status))) return res.status(404).json({ error: "Lead not found." });
   res.json({ ok: true });
 });
 

@@ -49,7 +49,9 @@ router.post("/sms/:businessId", (req, res) => {
   const body = String(req.body.Body || "").slice(0, 1600);
   if (!E164.test(from) || !body.trim()) return;
 
-  logSms({ businessId: business.id, direction: "in", to: business.twilioNumber, from, body, status: "received" });
+  logSms({ businessId: business.id, direction: "in", to: business.twilioNumber, from, body, status: "received" }).catch((err) =>
+    console.error("[sms] could not log the inbound message:", err)
+  );
   handleIncomingMessage({ business, channel: "sms", contact: from, text: body }).catch((err) =>
     console.error("[sms] failed to handle message:", err)
   );

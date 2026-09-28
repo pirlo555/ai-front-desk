@@ -37,17 +37,17 @@ router.post("/sms", async (req, res) => {
   if (!p) return;
   const text = String(req.body.text || "").trim().slice(0, 1600);
   if (!text) return res.status(400).json({ error: "Write a message first." });
-  logSms({ businessId: p.business.id, direction: "in", to: p.business.twilioNumber || "business", from: p.phone, body: text, status: "mock" });
+  await logSms({ businessId: p.business.id, direction: "in", to: p.business.twilioNumber || "business", from: p.phone, body: text, status: "mock" });
   await handleIncomingMessage({ business: p.business, channel: "sms", contact: p.phone, text });
   res.json({ ok: true });
 });
 
-router.get("/sms", (req, res) => {
+router.get("/sms", async (req, res) => {
   const p = parse(req, res);
   if (!p) return;
   res.json({
-    contact: listSms(p.business.id, p.phone),
-    frontDesk: p.business.frontDeskPhone ? listSms(p.business.id, p.business.frontDeskPhone) : [],
+    contact: await listSms(p.business.id, p.phone),
+    frontDesk: p.business.frontDeskPhone ? await listSms(p.business.id, p.business.frontDeskPhone) : [],
   });
 });
 

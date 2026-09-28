@@ -16,9 +16,31 @@ if (!sessionSecret) {
   console.warn("[config] SESSION_SECRET not set - using a temporary one (you'll be logged out on restart).");
 }
 
+/**
+ * Where the data lives. Managed hosts wipe the application's filesystem on
+ * every deploy, which quietly destroyed the SQLite file and with it every
+ * client's leads, so production points at a real database. Set MYSQL_HOST to
+ * switch; with it unset the app keeps using a local file and needs no setup.
+ */
+const mysqlHost = (process.env.MYSQL_HOST || "").trim();
+const mysql = mysqlHost
+  ? {
+      host: mysqlHost,
+      port: Number(process.env.MYSQL_PORT || 3306),
+      user: (process.env.MYSQL_USER || "").trim(),
+      password: process.env.MYSQL_PASSWORD || "",
+      database: (process.env.MYSQL_DATABASE || "").trim(),
+    }
+  : null;
+
+if (mysql && (!mysql.user || !mysql.database)) {
+  throw new Error("MYSQL_HOST is set, so MYSQL_USER and MYSQL_DATABASE are required too.");
+}
+
 export const env = {
   isProd,
   port,
+  mysql,
   publicBaseUrl: (process.env.PUBLIC_BASE_URL || `http://localhost:${port}`).replace(/\/$/, ""),
   // Mock mode: SMS are saved to the database instead of sent, and the /dev simulator is enabled.
   mockSms: process.env.MOCK_SMS !== "false",

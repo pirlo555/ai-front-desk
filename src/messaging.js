@@ -12,15 +12,15 @@ function getTwilio() {
 export async function sendSms(business, to, body) {
   const from = business.twilioNumber || "business";
   if (env.mockSms) {
-    logSms({ businessId: business.id, direction: "out", to, from, body, status: "mock" });
+    await logSms({ businessId: business.id, direction: "out", to, from, body, status: "mock" });
     console.log(`[sms:mock] ${from} -> ${to}: ${body}`);
     return;
   }
   try {
     const msg = await getTwilio().messages.create({ from: business.twilioNumber, to, body });
-    logSms({ businessId: business.id, direction: "out", to, from, body, status: msg.status });
+    await logSms({ businessId: business.id, direction: "out", to, from, body, status: msg.status });
   } catch (err) {
-    logSms({ businessId: business.id, direction: "out", to, from, body, status: `error:${err.code || "unknown"}` });
+    await logSms({ businessId: business.id, direction: "out", to, from, body, status: `error:${err.code || "unknown"}` });
     console.error(`[sms] failed to send to ${to}:`, err.message);
   }
 }

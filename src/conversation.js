@@ -47,7 +47,7 @@ async function afterTurn(business, conversation, result) {
   const lang = business.language;
   const t = ALERTS[lang] || ALERTS.en;
   if (result.lead) {
-    const { lead, isNew, statusChanged } = db.upsertLead(conversation.id, business.id, result.lead);
+    const { lead, isNew, statusChanged } = await db.upsertLead(conversation.id, business.id, result.lead);
     const job = pick(business.pack.jobTypes[lead.job_type], lang) || t.fallbackJob;
     const who = pick(business.pack.contact.one, lang);
     if (isNew) {
@@ -57,7 +57,7 @@ async function afterTurn(business, conversation, result) {
     }
   }
   if (result.escalate && !conversation.escalation_notified) {
-    db.markEscalationNotified(conversation.id);
+    await db.markEscalationNotified(conversation.id);
     await notifyFrontDesk(business, t.needsPerson);
   }
 }
@@ -67,29 +67,29 @@ async function afterTurn(business, conversation, result) {
  * (or null when nothing should be sent back).
  */
 export async function handleIncomingMessage({ business, channel, contact, text }) {
-  const conversation = db.getOrCreateConversation(business.id, channel, contact);
+  const conversation = await db.getOrCreateConversation(business.id, channel, contact);
 
   if (channel === "sms") {
     if (OPT_OUT.test(text)) {
-      db.setOptedOut(conversation.id, true);
+      await db.setOptedOut(conversation.id, true);
       return null; // Twilio sends the carrier-required opt-out confirmation.
     }
     if (OPT_IN.test(text) && conversation.opted_out) {
-      db.setOptedOut(conversation.id, false);
+      await db.setOptedOut(conversation.id, false);
       return null;
     }
     if (conversation.opted_out) return null;
   }
 
-  db.addMessage(conversation.id, "user", text);
+  await db.addMessage(conversation.id, "user", text);
 
   return withLock(conversation.id, async () => {
-    const fresh = db.getConversation(conversation.id);
-    const messages = db.getMessages(fresh.id);
+    const fresh = await db.getConversation(conversation.id);
+    const messages = await db.getMessages(fresh.id);
     if (messages[messages.length - 1]?.role !== "user") return null; // already answered in an earlier turn
 
     let result;
-    if (db.countUserMessages(fresh.id) > MAX_USER_MESSAGES) {
+    if ((await db.countUserMessages(fresh.id)) > MAX_USER_MESSAGES) {
       result = fallbackResult();
     } else {
       try {
@@ -100,7 +100,7 @@ export async function handleIncomingMessage({ business, channel, contact, text }
       }
     }
 
-    db.addMessage(fresh.id, "assistant", result.reply);
+    await db.addMessage(fresh.id, "assistant", result.reply);
     if (channel === "sms") await sendSms(business, contact, result.reply);
     await afterTurn(business, fresh, result);
     return result.reply;
@@ -109,9 +109,9 @@ export async function handleIncomingMessage({ business, channel, contact, text }
 
 /** A call to the business went unanswered: text the caller first. */
 export async function handleMissedCall({ business, callerPhone }) {
-  const conversation = db.getOrCreateConversation(business.id, "sms", callerPhone);
+  const conversation = await db.getOrCreateConversation(business.id, "sms", callerPhone);
   if (conversation.opted_out) return;
   const greeting = business.greeting.sms;
-  db.addMessage(conversation.id, "assistant", greeting);
+  await db.addMessage(conversation.id, "assistant", greeting);
   await sendSms(business, callerPhone, greeting);
 }
