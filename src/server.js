@@ -8,6 +8,7 @@ import chatRoutes from "./routes/chat.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import twilioRoutes from "./routes/twilio.js";
 import devRoutes from "./routes/dev.js";
+import { initDb } from "./db.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -49,13 +50,25 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong on our side. Try again in a moment." });
 });
 
-app.listen(env.port, () => {
-  console.log(`\nAI front desk running at ${env.publicBaseUrl}`);
-  console.log(`  Dashboard:      ${env.publicBaseUrl}/dashboard`);
-  for (const b of businesses.values()) {
-    console.log(`  Demo website:   ${env.publicBaseUrl}/demo/${b.id}   (${b.name} - ${pick(b.pack.label, b.language)})`);
-  }
-  if (devTools) console.log(`  SMS simulator:  ${env.publicBaseUrl}/simulator   (MOCK_SMS on: no real texts are sent)`);
-  else if (env.mockSms) console.log("  SMS simulator:  off in production (it has no login and would burn API credit)");
-  if (!process.env.ANTHROPIC_API_KEY) console.warn("\n  ANTHROPIC_API_KEY is not set: the assistant will only send the fallback reply.");
+// Startup lives in a function rather than at module top level: LiteSpeed, the
+// runner Hostinger uses, loads the app with require(), which refuses any module
+// graph that awaits at the top level (ERR_REQUIRE_ASYNC_MODULE).
+async function main() {
+  await initDb();
+
+  app.listen(env.port, () => {
+    console.log(`\nAI front desk running at ${env.publicBaseUrl}`);
+    console.log(`  Dashboard:      ${env.publicBaseUrl}/dashboard`);
+    for (const b of businesses.values()) {
+      console.log(`  Demo website:   ${env.publicBaseUrl}/demo/${b.id}   (${b.name} - ${pick(b.pack.label, b.language)})`);
+    }
+    if (devTools) console.log(`  SMS simulator:  ${env.publicBaseUrl}/simulator   (MOCK_SMS on: no real texts are sent)`);
+    else if (env.mockSms) console.log("  SMS simulator:  off in production (it has no login and would burn API credit)");
+    if (!process.env.ANTHROPIC_API_KEY) console.warn("\n  ANTHROPIC_API_KEY is not set: the assistant will only send the fallback reply.");
+  });
+}
+
+main().catch((err) => {
+  console.error("[server] could not start:", err.message);
+  process.exit(1);
 });

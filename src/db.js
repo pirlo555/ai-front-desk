@@ -7,8 +7,37 @@ import { env } from "./config.js";
 import { open as openSqlite } from "./db-sqlite.js";
 import { open as openMysql } from "./db-mysql.js";
 
-const db = env.mysql ? await openMysql(env.mysql) : await openSqlite();
-console.log(`[db] using ${db.name}`);
+/**
+ * The connection is opened lazily instead of with a top-level await.
+ * Hostinger's LiteSpeed runner loads the app through require(), which refuses
+ * any ESM graph containing top-level await, so the app crashed on boot with
+ * ERR_REQUIRE_ASYNC_MODULE. Keeping the module synchronous at import time
+ * avoids that; server.js still calls initDb() before listening, so bad
+ * credentials are still caught at startup rather than mid-conversation.
+ */
+let opening = null;
+
+function driver() {
+  opening ??= (env.mysql ? openMysql(env.mysql) : openSqlite()).then((d) => {
+    console.log(`[db] using ${d.name}`);
+    return d;
+  });
+  return opening;
+}
+
+/** Opens the connection and creates the tables. Call once, before serving. */
+export async function initDb() {
+  await driver();
+}
+
+const db = {
+  async all(sql, params) {
+    return (await driver()).all(sql, params);
+  },
+  async run(sql, params) {
+    return (await driver()).run(sql, params);
+  },
+};
 
 const now = () => new Date().toISOString();
 
