@@ -28,6 +28,11 @@ app.use("/api", chatRoutes);
 app.use("/api/desk", dashboardRoutes);
 app.use("/twilio", twilioRoutes);
 
+// Carrier A2P registration requires both pages to be publicly reachable, with
+// those exact titles and the wording they check for. Keep them served.
+app.get("/privacy", (req, res) => res.sendFile(path.join(pub, "privacy.html")));
+app.get("/terms", (req, res) => res.sendFile(path.join(pub, "terms.html")));
+
 app.get("/", (req, res) => res.redirect("/dashboard"));
 app.get("/dashboard", (req, res) => res.sendFile(path.join(pub, "dashboard.html")));
 app.get("/demo/:businessId", (req, res) => {
