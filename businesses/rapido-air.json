@@ -47,7 +47,7 @@
     "web": "Hi! I'm the virtual assistant for Rapido Air & Plumbing. ¿Prefiere español? Tell me what's going on and I'll get a technician scheduled.",
     "sms": "Hi, this is Rapido Air & Plumbing - sorry we missed your call! What's going on? / ¡Hola! Perdón por no contestar, ¿qué problema tiene? Reply STOP to opt out."
   },
-  "twilioNumber": "+13055550140",
-  "frontDeskPhone": "+13055550149",
+  "twilioNumber": "+17863213531",
+  "frontDeskPhone": "+15550000000",
   "allowedOrigins": []
 }
