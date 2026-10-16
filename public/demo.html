@@ -5,11 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demo</title>
 <style>
-  body { margin: 0; font-family: Georgia, "Times New Roman", serif; color: #1d2b28; background: #fbfaf7; }
+  :root{--ink:#1d2b28;--ink-2:#55635f;--line:#ddd7cb;--accent:#8a6a2f}
+  *{box-sizing:border-box}
+  body { margin: 0; font-family: Georgia, "Times New Roman", serif; color: var(--ink); background: #fbfaf7; }
   .bar { background: #fff3cd; color: #5c4700; font: 13px/1.45 system-ui, sans-serif; padding: 9px 16px; text-align: center; }
-  main { max-width: 760px; margin: 0 auto; padding: 56px 20px; }
-  h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.05; margin: 0 0 16px; }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+  h1 { font-size: clamp(30px, 5vw, 50px); line-height: 1.05; margin: 0 0 14px; }
   p { font-size: 18px; line-height: 1.6; max-width: 58ch; }
+
+  /* The call-to-action block is what carriers ask to see for an A2P
+     registration: the number people dial, and the disclosure that calling it
+     may bring a text back. It is real page content, not decoration. */
+  .cta { margin: 32px 0 8px; padding: 22px 24px; background: #fff;
+         border: 1px solid var(--line); border-top: 3px solid var(--accent); }
+  .cta .label { font: 600 11px/1 system-ui, sans-serif; letter-spacing: .14em;
+                text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 10px; }
+  .cta .tel { font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spacing: -.01em;
+              color: var(--ink); text-decoration: none; display: inline-block; }
+  .cta .sms { margin: 14px 0 0; font: 14px/1.6 system-ui, sans-serif; color: var(--ink-2); max-width: none; }
+  .cta .sms b { color: var(--ink); font-weight: 600; }
+  .cta a.pol { color: var(--accent); }
+
   .fake { margin-top: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
   .fake div { background: #eee9df; border-radius: 10px; height: 120px; }
 </style>
@@ -19,19 +35,34 @@
   <main>
     <h1 id="title"></h1>
     <p id="lede"></p>
+
+    <div class="cta">
+      <span class="label" id="cta-label">Call us</span>
+      <a class="tel" id="tel" href="#"></a>
+      <p class="sms" id="sms"></p>
+    </div>
+
     <div class="fake" aria-hidden="true"><div></div><div></div><div></div></div>
   </main>
   <script>
-    // The prospect opening this link sees it before anything else, so it is
-    // written in the language their own business was set up in.
     var COPY = {
       en: {
         bar: "Example page: this stands in for the business's own website. The chat bubble in the corner is the real assistant.",
-        lede: "Open the chat in the bottom-right corner and write as a customer would, in English or Spanish. New leads show up in the dashboard."
+        lede: "Open the chat in the bottom-right corner and write as a customer would, in English or Spanish. New leads show up in the dashboard.",
+        ctaLabel: "Call us",
+        sms: function (name) {
+          return "If we miss your call, " + name + " will text you back at the number you called from, so we can help you without you having to call again. " +
+                 "Message frequency varies. Msg & data rates may apply. Reply STOP to opt out, HELP for help.";
+        }
       },
       es: {
         bar: "Página de ejemplo: hace de web del negocio. La burbuja de chat de la esquina sí es el asistente de verdad.",
-        lede: "Abra el chat en la esquina de abajo a la derecha y escriba como lo haría un cliente suyo, en español o en inglés. Los contactos nuevos aparecen en el panel."
+        lede: "Abra el chat en la esquina de abajo a la derecha y escriba como lo haría un cliente suyo, en español o en inglés. Los contactos nuevos aparecen en el panel.",
+        ctaLabel: "Llámenos",
+        sms: function (name) {
+          return "Si no alcanzamos a contestarle, " + name + " le responderá por mensaje de texto al número desde el que llamó, para ayudarle sin que tenga que volver a llamar. " +
+                 "La frecuencia de los mensajes varía. Pueden aplicarse tarifas de mensajes y datos. Responda STOP para no recibir más mensajes, o HELP para obtener ayuda.";
+        }
       }
     };
 
@@ -40,20 +71,31 @@
     s.src = "/widget.js"; s.dataset.business = id; s.defer = true;
     document.body.appendChild(s);
 
-    function paint(lang, name) {
+    function paint(lang, name, phone) {
       var c = COPY[lang] || COPY.en;
       document.documentElement.lang = COPY[lang] ? lang : "en";
       document.getElementById("bar").textContent = c.bar;
       document.getElementById("lede").textContent = c.lede;
       document.getElementById("title").textContent = name;
+      document.getElementById("cta-label").textContent = c.ctaLabel;
       document.title = name;
+
+      var tel = document.getElementById("tel");
+      tel.textContent = phone || "";
+      tel.href = phone ? "tel:" + phone.replace(/[^0-9+]/g, "") : "#";
+      document.getElementById("sms").innerHTML = "";
+      document.getElementById("sms").append(c.sms(name));
+
+      var pol = document.createElement("span");
+      pol.innerHTML = ' <a class="pol" href="/privacy">Privacy Policy</a> · <a class="pol" href="/terms">Terms &amp; Conditions</a>';
+      document.getElementById("sms").append(pol);
     }
 
-    paint("es", " ");
+    paint("es", " ", "");
     fetch("/api/businesses/" + encodeURIComponent(id) + "/public")
       .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-      .then(function (b) { paint(b.language, b.name); })
-      .catch(function () { paint("es", "Demo"); });
+      .then(function (b) { paint(b.language, b.name, b.phone); })
+      .catch(function () { paint("es", "Demo", ""); });
   </script>
 </body>
 </html>
