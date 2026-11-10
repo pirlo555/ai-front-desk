@@ -68,7 +68,16 @@ router.get("/me", requireBusiness, (req, res) => {
 });
 
 router.get("/leads", requireBusiness, async (req, res) => {
-  res.json({ leads: await db.listLeads(req.business.id) });
+  const leads = await db.listLeads(req.business.id);
+  // A missed-call lead always has a number to call back: the one that texted in.
+  // The model only fills lead.phone when the caller spells it out, so fall back
+  // to the conversation's own contact instead of showing "no phone yet". Web
+  // sessions are deliberately left out: their contact is a session id.
+  for (const lead of leads) {
+    if (!lead.phone && lead.channel === "sms") lead.phone = lead.conversation_contact;
+    delete lead.conversation_contact;
+  }
+  res.json({ leads });
 });
 
 router.get("/conversations/:id", requireBusiness, async (req, res) => {

@@ -138,7 +138,7 @@ export async function getLead(id) {
 
 export async function listLeads(businessId, limit = 200) {
   return db.all(
-    `SELECT l.*, c.channel,
+    `SELECT l.*, c.channel, c.contact AS conversation_contact,
        (SELECT content FROM messages m WHERE m.conversation_id = l.conversation_id ORDER BY m.id DESC LIMIT 1) AS last_message
      FROM leads l JOIN conversations c ON c.id = l.conversation_id
      WHERE l.business_id = ? ORDER BY l.updated_at DESC LIMIT ${cap(limit, 1000)}`,
