@@ -17,7 +17,7 @@
     "                    general          -> leave it empty",
     "offers:           only prices written here are ever quoted. Leave it empty if unsure.",
     "twilioNumber:     the Twilio number for this business, +1 followed by 10 digits.",
-    "frontDeskPhone:   where alerts are texted. Leave empty to turn alerts off.",
+    "(alerts are texted to FRONT_DESK_PHONE in .env; leave it empty to turn them off)",
     "allowedOrigins:   the client's real website, e.g. [\"https://www.theirsite.com\"].",
     "",
     "Then add the dashboard password to .env:  BUSINESS_<ID>_PASSWORD=something-long",
@@ -52,6 +52,5 @@
     "sms": "Hi, this is Business Name - sorry we missed your call! How can we help? / ¡Hola! Perdón por no contestar, ¿en qué le ayudamos? Reply STOP to opt out."
   },
   "twilioNumber": "",
-  "frontDeskPhone": "",
   "allowedOrigins": []
 }

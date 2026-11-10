@@ -4,3 +4,6 @@ node_modules/
 !.env.example
 data/
 _subir-hostinger.zip
+businesses/trebol.json
+businesses/camilo.json
+businesses/eddy.json

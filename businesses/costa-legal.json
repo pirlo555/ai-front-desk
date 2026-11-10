@@ -44,6 +44,5 @@
     "sms": "Hi, this is Costa & Rivera Law - sorry we missed your call! How can we help? / ¡Hola! Perdón por no contestar, ¿en qué le ayudamos? Reply STOP to opt out."
   },
   "twilioNumber": "+13055550180",
-  "frontDeskPhone": "+15550000000",
   "allowedOrigins": []
 }

@@ -46,6 +46,5 @@
     "sms": "Hola, le habla Hermanos Auto Repair - ¡perdón por no contestar! ¿Qué le pasa a su carro? / Sorry we missed your call! Responda STOP para no recibir más mensajes."
   },
   "twilioNumber": "+13055550190",
-  "frontDeskPhone": "+15550000000",
   "allowedOrigins": []
 }

@@ -48,6 +48,5 @@
     "sms": "Hi, this is Rapido Air & Plumbing - sorry we missed your call! What's going on? / ¡Hola! Perdón por no contestar, ¿qué problema tiene? Reply STOP to opt out."
   },
   "twilioNumber": "+17863213531",
-  "frontDeskPhone": "+15550000000",
   "allowedOrigins": []
 }

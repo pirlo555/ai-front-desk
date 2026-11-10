@@ -50,6 +50,5 @@
     "sms": "Hi, this is Brisa Family Dental - sorry we missed your call! How can we help? / ¡Hola! Perdón por no contestar, ¿en qué le ayudamos? Reply STOP to opt out."
   },
   "twilioNumber": "+17135550100",
-  "frontDeskPhone": "+15550000000",
   "allowedOrigins": []
 }

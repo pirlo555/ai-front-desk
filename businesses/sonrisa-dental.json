@@ -50,6 +50,5 @@
     "sms": "Hola, le habla Sonrisa Family Dental - ¡perdón por no contestar! ¿En qué le ayudamos? / Sorry we missed your call! How can we help? Responda STOP para no recibir más mensajes."
   },
   "twilioNumber": "+13055550160",
-  "frontDeskPhone": "+15550000000",
   "allowedOrigins": []
 }

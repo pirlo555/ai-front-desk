@@ -90,7 +90,10 @@ function loadBusinesses() {
     // "insurance" is the older name for this list, kept so existing dental files still load.
     business.qualifierOptions ??= business.insurance ?? [];
     business.allowedOrigins ??= [];
-    business.frontDeskPhone ??= "";
+    // Alerts go to one person in practice, so the number lives in the environment
+    // rather than being repeated in every business file, where it would also be
+    // a personal phone number committed to the repository.
+    business.frontDeskPhone ??= process.env.FRONT_DESK_PHONE || "";
     business.twilioNumber ??= "";
     business.offers ??= [];
     business.color ??= "#0F6B5C";
