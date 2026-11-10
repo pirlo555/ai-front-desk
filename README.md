@@ -1,109 +1,152 @@
-# AI Front Desk — recepcionista bilingüe para negocios locales
+# AI Front Desk
 
-Asistente bilingüe (inglés/español) que contesta por el chat de la web del negocio
-y por SMS cuando nadie coge el teléfono. Captura el nombre, qué necesita la persona
-y cuándo quiere la cita, y avisa a recepción. Funciona para **cualquier negocio local**:
-clínicas dentales, consultas médicas, fontaneros y aire acondicionado, talleres y abogados.
+A bilingual (English / Spanish) front desk for small local businesses. When a customer
+calls and nobody picks up, the business texts them back within seconds, works out what
+they need, and hands the staff a finished lead.
 
-## Qué hace
+**Try it:** [missedtotext.com/demo/rapido-air](https://missedtotext.com/demo/rapido-air) —
+open the chat and write as a customer would, in either language. Or call
+**+1 786 321 3531**, let it ring, and hang up. The text-back is real.
 
-- **Llamada perdida → mensaje de texto.** Si nadie contesta, el sistema le escribe al
-  que llamó en segundos y sigue la conversación por SMS.
-- **Chat en la web del negocio.** Una sola línea de código en su página.
-- **Habla español e inglés** y responde en el idioma de la persona.
-- **Panel de recepción** con los contactos nuevos, lo que necesitan y su urgencia.
-- **Alertas por SMS** a recepción cuando entra un contacto urgente o hace falta una persona.
+![The assistant answering a customer](docs/chat.jpg)
 
-## Sectores incluidos
+The customer wrote in Spanish to a greeting in English. The assistant switched language,
+treated a baby in the house as an emergency, flagged it for a human, and started
+collecting the name and service address — from one sentence.
 
-Cada negocio elige uno en su archivo con el campo `vertical`. El sector decide qué datos
-pide el asistente, cómo se etiquetan los trabajos en el panel y qué reglas de seguridad aplica.
+## The problem
 
-| `vertical` | Para quién | Dato clave que pide |
-|---|---|---|
-| `dental` | Clínicas dentales | Seguro médico |
-| `medical` | Consultas médicas y med spas | Seguro médico |
-| `home_services` | Fontanería, aire acondicionado, electricidad, techos, cerrajería | Dirección del servicio |
-| `auto` | Talleres mecánicos | Vehículo (año, marca, modelo) |
-| `legal` | Despachos de abogados | Ciudad y estado del caso |
-| `general` | Cualquier otro negocio local | Ninguno |
+A two-person A/C company in Miami misses most of its calls, because the people who would
+answer the phone are the people on the roof. The caller does not leave a voicemail. They
+call the next company in the search results.
 
-Cada sector trae sus **reglas de seguridad** propias. Por ejemplo: el dental nunca
-diagnostica y manda al 911 ante una infección grave; el de abogados nunca da consejo legal
-ni dice si alguien tiene caso; el de fontanería manda salir de la casa si huele a gas.
+A receptionist costs more than the jobs they would save. Voicemail does not work, because
+nobody listens to voicemail any more.
 
-## Poner en marcha
+## What it does
+
+```
+Customer calls  ──▶  nobody answers  ──▶  Twilio webhook
+                                             │
+                                             ▼
+                              "Sorry we missed your call -
+                               what's going on?"
+                                             │
+                      customer replies, in whatever language
+                                             │
+                                             ▼
+                      Claude qualifies: what they need, how
+                      urgent, preferred time, service address
+                                             │
+                        ┌────────────────────┴───────────────┐
+                        ▼                                    ▼
+              SMS alert to the owner                 lead in the dashboard
+              (deliberately no personal              (with the full
+               data in the text itself)               conversation)
+```
+
+The same assistant also runs as a chat bubble on the business's own site — one script
+tag, isolated in a shadow root so it cannot collide with their CSS.
+
+![An example business page](docs/demo-page.jpg)
+
+## What is interesting about it
+
+### One codebase, any industry
+
+Industries differ in ways the conversation has to respect: a dental clinic needs the
+insurance carrier, a plumber needs the service address, a body shop needs the car. Each
+one is a **vertical pack** in [`src/verticals.js`](src/verticals.js) holding its job
+types, the extra fact to collect, and its own safety rules — a legal pack that must never
+say whether someone has a case, a home-services pack that must never talk a customer
+through a repair, a dental pack that must never diagnose and sends a bad infection to 911.
+
+Adding an industry is a pack. Adding a business is one JSON file.
+
+### Bilingual on two separate axes
+
+Members of the public are answered in the language *they* wrote in, decided per person
+and per message. Separately, each business file sets the language its *own staff* reads:
+the dashboard, the SMS alerts, the lead summaries.
+
+So a shop in Hialeah can have Spanish-speaking staff and still serve English-speaking
+customers in English, from one install.
+
+### Structured output rather than prompt-and-hope
+
+Every turn returns a typed object — the reply to send, whether to escalate to a human,
+and the lead fields — against a JSON schema built per vertical, so the job type can only
+ever be one this industry actually offers. There is no free-text slot where a lead field
+should be.
+
+### Carrier compliance, which turned out to be most of the work
+
+Sending application SMS to US phones means A2P 10DLC registration: a brand, a campaign,
+and a reviewer who reads your pages. That shaped the code more than any feature did.
+
+- `/privacy` and `/terms` exist because the campaign requires them, with the exact
+  wording carriers look for.
+- The demo page is **rendered on the server**, because the reviewer's crawler does not
+  run JavaScript, and a page that paints itself in the browser looks empty to it.
+- STOP and HELP are answered — HELP even after opt-out, because carriers require it.
+- The SMS simulator is disabled in production: it has no login, and anyone who found the
+  URL could spend the account's API credit.
+- Twilio request signatures are verified on every webhook.
+
+Brand and campaign are approved, and the number is live.
+
+### Two database drivers behind one interface
+
+Development runs on `node:sqlite` with no setup; production runs on MySQL. Both implement
+the same small `{ all, run }` interface, chosen at startup from the environment — because
+the production host wipes the application's filesystem on every deploy, so a file-backed
+database would have quietly lost every lead. That was found by asking the assistant to
+recall a caller after a redeploy and watching it answer like a stranger.
+
+## Stack
+
+Node 22+ · Express 5 · ESM · Claude (`claude-opus-5`, structured outputs) · Twilio Voice
+and SMS · MySQL / `node:sqlite` · no front-end framework
+
+## Running it locally
 
 ```bash
 npm install
+cp .env.example .env     # add your own keys
 npm run dev
 ```
 
-Se abre en <http://localhost:3000>:
+With `MOCK_SMS=true` no real texts are sent and `/simulator` fakes inbound messages, so
+the whole flow can be exercised without Twilio.
 
-- **Panel de recepción** — <http://localhost:3000/dashboard>
-- **Web de prueba de cada negocio** — `/demo/brisa`, `/demo/rapido-air`, `/demo/costa-legal`
-- **Simulador de SMS** — <http://localhost:3000/simulator> (solo en modo prueba)
+[`MANUAL.md`](MANUAL.md) is the operator's guide, in Spanish: how to add a business, wire
+up its number, and put the chat bubble on its site.
 
-Las claves van en el archivo `.env`. Copia `.env.example` a `.env` y rellénalo.
-Sin `ANTHROPIC_API_KEY` todo funciona igual, pero el asistente solo manda una
-respuesta genérica en lugar de conversar.
-
-## Añadir un cliente nuevo
-
-1. Copia `businesses/_template.json` y ponle el nombre del negocio, por ejemplo `mi-taller.json`.
-2. Rellena los datos. El archivo `_template.json` explica cada campo por dentro.
-3. Añade la contraseña del panel a `.env`:
-   `BUSINESS_MI_TALLER_PASSWORD=algo-largo-y-dificil`
-   (el `id` en mayúsculas, con guiones convertidos en guiones bajos)
-4. Reinicia el servidor.
-
-Ya tiene su panel, su web de prueba y su chat. No hay que tocar código.
-
-Para poner el chat en la web real del cliente, él añade esta línea a su página:
-
-```html
-<script src="https://TU-SERVIDOR/widget.js" data-business="mi-taller" defer></script>
-```
-
-y tú añades su dominio a `allowedOrigins` en su archivo JSON.
-
-## Modo prueba y modo real
-
-`MOCK_SMS=true` en `.env` (lo normal mientras desarrollas): no se manda ningún SMS de
-verdad. Todo queda guardado y se ve en el simulador.
-
-`MOCK_SMS=false`: se mandan SMS reales por Twilio. Necesita `TWILIO_ACCOUNT_SID`
-y `TWILIO_AUTH_TOKEN`, y que cada negocio tenga su `twilioNumber`.
-
-En Twilio, para cada número:
-- **A call comes in** → `https://TU-SERVIDOR/twilio/voice/<id-del-negocio>`
-- **A message comes in** → `https://TU-SERVIDOR/twilio/sms/<id-del-negocio>`
-
-## Cómo está organizado
+## Layout
 
 ```
-businesses/          un archivo JSON por cliente (_template.json es la plantilla)
-src/verticals.js     los sectores: qué pide cada uno y sus reglas de seguridad
-src/config.js        lee y valida los archivos de negocio
-src/agent.js         construye las instrucciones y habla con Claude
-src/conversation.js  la lógica de una conversación: bajas, avisos, contactos
-src/db.js            base de datos SQLite
-src/routes/          chat web, webhooks de Twilio, panel, simulador
-public/              panel, widget de chat, webs de prueba, simulador
+src/
+  agent.js        the model call, output schema, lead extraction
+  verticals.js    industry packs: job types, qualifiers, safety rules
+  conversation.js turn handling, opt-out and HELP, front-desk alerts
+  db.js           driver selection; db-mysql.js / db-sqlite.js
+  routes/         chat, dashboard, Twilio webhooks, dev tools
+public/           widget, dashboard, demo page, privacy, terms
+businesses/       one JSON file per business (_template.json documents every field)
 ```
 
-## Seguridad
+## Not built yet
 
-- Cada negocio solo ve lo suyo: el panel filtra siempre por negocio.
-- Los webhooks de Twilio se verifican con firma cuando el modo real está activo.
-- Límite de mensajes por minuto en el chat y en los intentos de login.
-- El asistente nunca pide número de seguro social, fecha de nacimiento ni tarjetas.
-- Las bajas por SMS (STOP / BAJA) se respetan y quedan guardadas.
+Voice answering — it texts back, it does not hold a conversation on the phone. Real
+calendar booking: it records a preferred time and says the front desk will confirm, and
+never claims anything is booked. Reminders. Subscription billing.
 
-## Pendiente
+## Status
 
-- Voz: que el asistente conteste el teléfono hablando, no solo con SMS.
-- Conexión con la agenda real (Google Calendar) para confirmar citas de verdad.
-- Recordatorios y seguimiento automático.
-- Cobro de suscripciones.
+In production on its own domain, with a registered US phone number, an approved A2P
+campaign, and live end-to-end conversations in both languages. Not yet serving paying
+clients — it is being sold to local businesses in Hialeah, Florida.
+
+---
+
+Built by Ariel Merino Chong, Miami.
